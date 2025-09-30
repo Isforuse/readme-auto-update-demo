@@ -1,0 +1,23 @@
+name: Update README
+
+on:
+  workflow_dispatch: {}   # 手動觸發
+  schedule:
+    - cron: "0 * * * *"   # 每小時執行一次
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Update README with Recent Activity
+        uses: jamesgeorge007/github-activity-readme@v0.4.1
+        with:
+          COMMIT_MSG: "chore: update README with recent activity"
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+  
