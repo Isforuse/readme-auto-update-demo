@@ -1,0 +1,24 @@
+name: Validate README markers
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Validate README markers
+        run: |
+          if ! grep -q "<!--START_SECTION:activity-->" README.md || ! grep -q "<!--END_SECTION:activity-->" README.md; then
+            echo "❌ README.md is missing required activity markers."
+            exit 1
+          else
+            echo "✅ README.md markers found."
+          fi
