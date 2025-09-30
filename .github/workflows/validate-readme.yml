@@ -1,24 +1,55 @@
-name: Validate README markers
+# .github/workflows/preview-readme.yml
+name: Preview README changes
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+    branches: [ main ]   # PR 指向 main 時觸發
+  workflow_dispatch:
+
+permissions:
+  contents: read         # 只讀即可，預覽不寫回 repo
 
 jobs:
-  validate:
+  preview:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Validate README markers
-        run: |
-          if ! grep -q "<!--START_SECTION:activity-->" README.md || ! grep -q "<!--END_SECTION:activity-->" README.md; then
-            echo "❌ README.md is missing required activity markers."
-            exit 1
-          else
-            echo "✅ README.md markers found."
-          fi
+      # 用 GitHub Script 抓近期活動，產生預覽內容（不 commit）
+      - name: Build preview README (no commit)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+
+            // 抓最新 5 筆 repo events（很輕量的示範）
+            const { data: events } = await github.request(
+              'GET /repos/{owner}/{repo}/events',
+              { owner, repo, per_page: 5 }
+            );
+
+            const lines = events.map(e =>
+              `- ${e.type} by @${e.actor.login} on ${new Date(e.created_at).toISOString().slice(0,10)}`
+            ).join('\n');
+
+            const start = '<!--START_SECTION:activity-->';
+            const end   = '<!--END_SECTION:activity-->';
+            const readme = fs.readFileSync('README.md','utf8');
+
+            const preview = readme.replace(
+              new RegExp(`${start}[\\s\\S]*?${end}`, 'm'),
+              `${start}\n${lines}\n${end}`
+            );
+
+            fs.writeFileSync('preview-README.md', preview);
+            core.info('preview-README.md generated');
+
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4   # ← 由 v3 改成 v4
+        with:
+          name: preview-readme
+          path: preview-README.md
+          if-no-files-found: error
