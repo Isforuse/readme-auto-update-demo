@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Generate preview README
         uses: jamesgeorge007/github-activity-readme@v0.4.1
@@ -21,7 +21,7 @@ jobs:
           COMMIT_MSG: "chore: preview README with recent activity"
 
       - name: Save preview as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: preview-readme
           path: README.md
