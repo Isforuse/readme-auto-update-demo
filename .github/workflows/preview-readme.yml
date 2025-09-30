@@ -13,28 +13,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Generate preview README (no commit)
+      - name: Generate preview README (with real events)
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const start = '<!--START_SECTION:activity-->';
             const end   = '<!--END_SECTION:activity-->';
             const readme = fs.readFileSync('README.md','utf8');
 
-            // ⚠️ 這裡你可以改成呼叫 GitHub API，現在先放假資料當示範
-            const newContent = [
-              '- 🟢 Preview: Opened PR #4',
-              '- 🔵 Preview: Merged PR #3'
-            ].join('\n');
+            // 取得目前 repo 最近 5 筆事件
+            const { data: events } = await github.request(
+              'GET /repos/{owner}/{repo}/events',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 5
+              }
+            );
 
+            // 將事件轉成簡單文字
+            const lines = events.map(e =>
+              `- ${e.type} by @${e.actor.login} on ${new Date(e.created_at).toISOString().slice(0,10)}`
+            ).join('\n');
+
+            // 生成新的 README 預覽
             const preview = readme.replace(
               new RegExp(`${start}[\\s\\S]*?${end}`, 'm'),
-              `${start}\n${newContent}\n${end}`
+              `${start}\n${lines}\n${end}`
             );
 
             fs.writeFileSync('preview-README.md', preview);
-            core.info('✅ preview-README.md generated successfully');
+            core.info('✅ preview-README.md generated with real events');
 
       - name: Upload preview artifact
         uses: actions/upload-artifact@v4
