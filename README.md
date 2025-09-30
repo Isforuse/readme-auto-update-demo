@@ -1,4 +1,7 @@
 # readme-auto-update-demo
+<!--START_SECTION:badges-->
+![Update README](https://github.com/<OWNER>/<REPO>/actions/workflows/update-readme.yml/badge.svg)
+<!--END_SECTION:badges-->
 
 ## Recent Activity
 <!--START_SECTION:activity-->
