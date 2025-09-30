@@ -1,0 +1,27 @@
+name: Preview README changes
+
+on:
+  pull_request:        # 當有人開 PR 或更新 PR 時自動觸發
+    branches:
+      - main
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Generate preview README
+        uses: jamesgeorge007/github-activity-readme@v0.4.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+        with:
+          COMMIT_MSG: "chore: preview README with recent activity"
+
+      - name: Save preview as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: preview-readme
+          path: README.md
