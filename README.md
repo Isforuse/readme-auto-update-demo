@@ -11,5 +11,5 @@
 
 ## Recent Activity
 <!--START_SECTION:activity-->
-1. 🎉 Merged PR [#16](https://github.com/Isforuse/readme-auto-update-demo/pull/16) in [Isforuse/readme-auto-update-demo](https://github.com/Isforuse/readme-auto-update-demo)
+1. 💪 Opened PR [#17](https://github.com/Isforuse/readme-auto-update-demo/pull/17) in [Isforuse/readme-auto-update-demo](https://github.com/Isforuse/readme-auto-update-demo)
 <!--END_SECTION:activity-->
