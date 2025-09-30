@@ -13,15 +13,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Generate preview README
-        uses: jamesgeorge007/github-activity-readme@v0.4.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+      - name: Generate preview README (no commit)
+        uses: actions/github-script@v7
         with:
-          COMMIT_MSG: "chore: preview README with recent activity"
+          script: |
+            const fs = require('fs');
+            const start = '<!--START_SECTION:activity-->';
+            const end   = '<!--END_SECTION:activity-->';
+            const readme = fs.readFileSync('README.md','utf8');
 
-      - name: Save preview as artifact
+            // ⚠️ 這裡你可以改成呼叫 GitHub API，現在先放假資料當示範
+            const newContent = [
+              '- 🟢 Preview: Opened PR #4',
+              '- 🔵 Preview: Merged PR #3'
+            ].join('\n');
+
+            const preview = readme.replace(
+              new RegExp(`${start}[\\s\\S]*?${end}`, 'm'),
+              `${start}\n${newContent}\n${end}`
+            );
+
+            fs.writeFileSync('preview-README.md', preview);
+            core.info('✅ preview-README.md generated successfully');
+
+      - name: Upload preview artifact
         uses: actions/upload-artifact@v4
         with:
           name: preview-readme
-          path: README.md
+          path: preview-README.md
