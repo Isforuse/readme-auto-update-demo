@@ -19,7 +19,7 @@ jobs:
           MIN_REMAINING: '20'       # 低於多少剩餘配額就觸發等待
           MAX_RETRIES: '5'          # 最多重試次數
           BASE_BACKOFF_MS: '15000'  # 退避起始毫秒
-          FORCE_BACKOFF: 'true'    # Demo 用：設成 'true' 可強制觸發退避
+          FORCE_BACKOFF: 'false'    # Demo 用：設成 'true' 可強制觸發退避
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
