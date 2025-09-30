@@ -1,7 +1,6 @@
 # readme-auto-update-demo
-![Update README](https://github.com/isforuse/readme-auto-update-demo/actions/workflows/update-readme.yml/badge.svg)
-![Validate README markers](https://github.com/isforuse/readme-auto-update-demo/actions/workflows/validate-readme.yml/badge.svg)
-![Preview README changes](https://github.com/isforuse/readme-auto-update-demo/actions/workflows/preview-readme.yml/badge.svg)
+![<WorkflowName>](https://github.com/<OWNER>/<REPO>/actions/workflows/<workflow_file>.yml/badge.svg)
+
 
 
 ## Recent Activity
