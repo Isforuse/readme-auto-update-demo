@@ -1,5 +1,5 @@
 # .github/workflows/preview-readme.yml
-name: Preview README changes
+name: validate README changes
 
 on:
   pull_request:
