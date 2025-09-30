@@ -1,6 +1,6 @@
 # readme-auto-update-demo
 
-![<WorkflowName>](https://github.com/<OWNER>/<REPO>/actions/workflows/<workflow_file>.yml/badge.svg)
+![Update README](https://github.com/<OWNER>/<REPO>/actions/workflows/update-readme.yml/badge.svg)
 
 
 ## Recent Activity
