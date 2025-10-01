@@ -16,13 +16,13 @@
 
 ## Recent Commits
 <!--START_SECTION:commits-->
+- chore: update status badges in README (7b3b218)
+- Update README.md (409a194)
+- chore: update README with commits & PRs (6569cd6)
 - chore: update status badges in README (5fcae3f)
 - Merge pull request #18 from Isforuse/test-readme-auto-test
 
 Test readme auto test (a9e97d0)
-- Update README.md (d3de304)
-- Update update-readme.yml (f34c245)
-- chore: update README with recent activity (3a60cd1)
 <!--END_SECTION:commits-->
 
 ## Recent PRs
