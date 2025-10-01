@@ -1,7 +1,7 @@
 name: Update README
 
 on:
-  workflow_dispatch: {}   # 手動觸發
+  workflow_dispatch: {}
   schedule:
     - cron: "0 * * * *"   # 每小時執行一次
 
@@ -15,87 +15,58 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      # Step 1: 原本的 github-activity-readme (抓 user/repo events)
-      - name: Update README with Recent Activity
+      - name: Update Recent Activity
         uses: jamesgeorge007/github-activity-readme@v0.4.1
         with:
           COMMIT_MSG: "chore: update README with recent activity"
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
 
-      # Step 2: 抓最近 main branch 的 commits
-      - name: Fetch recent commits
-        id: commits
+      - name: Update Recent Commits & PRs
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.REPO_TOKEN }}
           script: |
-            const { data: commits } = await github.request("GET /repos/{owner}/{repo}/commits", {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: "main",
-              per_page: 5
-            });
-            const commitLines = commits.map(c => `- ${c.commit.message} (${c.sha.slice(0,7)})`).join("\n");
-            core.setOutput("commits", commitLines);
+            const fs = require('fs');
+            const readme = fs.readFileSync('README.md','utf8');
 
-      # Step 3: 抓最近 merged PRs
-      - name: Fetch recent merged PRs
-        id: prs
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.REPO_TOKEN }}
-          script: |
-            const { data: prs } = await github.request("GET /repos/{owner}/{repo}/pulls", {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: "closed",
-              per_page: 10
-            });
-            const merged = prs.filter(p => p.merged_at).slice(0, 5);
-            const prLines = merged.map(pr => `- PR #${pr.number}: ${pr.title} (by @${pr.user.login})`).join("\n");
-            core.setOutput("prs", prLines);
+            // --- Recent Commits ---
+            const { data: commits } = await github.request(
+              'GET /repos/{owner}/{repo}/commits',
+              { owner: context.repo.owner, repo: context.repo.repo, per_page: 5 }
+            );
+            const commitLines = commits.map(c =>
+              `- ${c.commit.message} (${c.sha.substring(0,7)}) by @${c.commit.author.name}`
+            ).join('\n');
 
-      # Step 4: 更新 README (插入 Commits + PRs 區塊)
-      - name: Update README with commits and PRs
-        run: |
-          START_COMMITS="<!--START_SECTION:commits-->"
-          END_COMMITS="<!--END_SECTION:commits-->"
-          START_PRS="<!--START_SECTION:prs-->"
-          END_PRS="<!--END_SECTION:prs-->"
+            // --- Recent PRs ---
+            const { data: prs } = await github.request(
+              'GET /repos/{owner}/{repo}/pulls',
+              { owner: context.repo.owner, repo: context.repo.repo, state: 'closed', per_page: 5 }
+            );
+            const mergedPRs = prs.filter(p => p.merged_at);
+            const prLines = mergedPRs.map(p =>
+              `- 🟢 Merged PR [#${p.number}](${p.html_url}) - ${p.title}`
+            ).join('\n');
 
-          CONTENT_COMMITS="${{ steps.commits.outputs.commits }}"
-          CONTENT_PRS="${{ steps.prs.outputs.prs }}"
+            let newReadme = readme;
 
-          # 確保 README 存在區塊，不存在就先加上
-          if ! grep -q "$START_COMMITS" README.md; then
-            echo -e "\n$START_COMMITS\n$END_COMMITS" >> README.md
-          fi
-          if ! grep -q "$START_PRS" README.md; then
-            echo -e "\n$START_PRS\n$END_PRS" >> README.md
-          fi
+            // Replace Commits section
+            newReadme = newReadme.replace(
+              /<!--START_SECTION:commits-->[\\s\\S]*<!--END_SECTION:commits-->/,
+              `<!--START_SECTION:commits-->\n${commitLines}\n<!--END_SECTION:commits-->`
+            );
 
-          # 用 awk 替換區塊內容
-          awk -v start="$START_COMMITS" -v end="$END_COMMITS" -v content="$CONTENT_COMMITS" '
-            BEGIN{inblock=0}
-            {
-              if ($0 ~ start) {print start; print content; inblock=1; next}
-              if ($0 ~ end)   {print end; inblock=0; next}
-              if (!inblock) print $0
-            }
-          ' README.md > README.tmp && mv README.tmp README.md
+            // Replace PRs section
+            newReadme = newReadme.replace(
+              /<!--START_SECTION:prs-->[\\s\\S]*<!--END_SECTION:prs-->/,
+              `<!--START_SECTION:prs-->\n${prLines}\n<!--END_SECTION:prs-->`
+            );
 
-          awk -v start="$START_PRS" -v end="$END_PRS" -v content="$CONTENT_PRS" '
-            BEGIN{inblock=0}
-            {
-              if ($0 ~ start) {print start; print content; inblock=1; next}
-              if ($0 ~ end)   {print end; inblock=0; next}
-              if (!inblock) print $0
-            }
-          ' README.md > README.tmp && mv README.tmp README.md
+            fs.writeFileSync('README.md', newReadme);
+            console.log("✅ README updated with commits & PRs");
 
-      # Step 5: Commit 更新
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: update README with commits & PRs"
+          commit_message: "chore: update commits & PRs in README"
