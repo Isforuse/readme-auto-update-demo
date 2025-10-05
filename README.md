@@ -11,7 +11,7 @@
 
 ## Recent Activity
 <!--START_SECTION:activity-->
-1. 🎉 Merged PR [#18](https://github.com/Isforuse/readme-auto-update-demo/pull/18) in [Isforuse/readme-auto-update-demo](https://github.com/Isforuse/readme-auto-update-demo)
+1. ❌ Closed PR [#48](https://github.com/TheDanniCraft/activity-log/pull/48) in [TheDanniCraft/activity-log](https://github.com/TheDanniCraft/activity-log)
 <!--END_SECTION:activity-->
 
 ## Recent Commits
