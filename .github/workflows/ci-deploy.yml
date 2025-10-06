@@ -3,27 +3,55 @@ name: CI/CD Deployment Pipeline
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
+  # === 1️⃣ Build job ===
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build
+      - name: Build project
         run: |
           echo "Building project..."
           zip -r build.zip .
 
-      - name: Upload Artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact
           path: build.zip
 
-  deploy-staging:
+  # === 2️⃣ Deploy to Dev ===
+  deploy-dev:
     needs: build
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+
+      - name: Release Dev Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: dev-v1.0
+          NOTE: "Development build release"
+        run: |
+          echo "Deploying development release..."
+          gh release delete "$TAG" -y || true
+          git tag -d "$TAG" || true
+          gh release create "$TAG" build.zip --notes "$NOTE"
+
+  # === 3️⃣ Deploy to Staging ===
+  deploy-staging:
+    needs: deploy-dev
     runs-on: ubuntu-latest
     environment: staging
     steps:
@@ -46,6 +74,7 @@ jobs:
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
 
+  # === 4️⃣ Deploy to Production ===
   deploy-production:
     needs: deploy-staging
     runs-on: ubuntu-latest
