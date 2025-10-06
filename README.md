@@ -7,7 +7,6 @@
 ![validate-readme](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/validate-readme.yml/badge.svg)
 <!--END_SECTION:badges-->
 
-
 ## Recent Activity
 <!--START_SECTION:activity-->
 1. ❌ Closed PR [#48](https://github.com/TheDanniCraft/activity-log/pull/48) in [TheDanniCraft/activity-log](https://github.com/TheDanniCraft/activity-log)
