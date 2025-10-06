@@ -24,11 +24,11 @@
 
 ## Recent Commits
 <!--START_SECTION:commits-->
+- chore: update status badges in README (b7dc83f)
+- Create ci-dev.yml (9fea477)
+- chore: update README with commits & PRs (80a1df7)
 - chore: update README with commits & PRs (c614323)
 - chore: update README with commits & PRs (080ccb3)
-- chore: update README with commits & PRs (20f24f2)
-- chore: update README with commits & PRs (b9c9f60)
-- chore: update README with commits & PRs (473470a)
 <!--END_SECTION:commits-->
 
 ## Recent PRs
