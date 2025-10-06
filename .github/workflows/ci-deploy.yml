@@ -6,9 +6,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  # === 1️⃣ Build job ===
+  # === 1️⃣ Build Job ===
   build:
     runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.version.outputs.VERSION }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,6 +25,10 @@ jobs:
         with:
           name: build-artifact
           path: build.zip
+
+      - name: Generate dynamic version number
+        id: version
+        run: echo "VERSION=${GITHUB_RUN_NUMBER}" >> $GITHUB_OUTPUT
 
   # === 2️⃣ Deploy to Dev ===
   deploy-dev:
@@ -41,8 +47,8 @@ jobs:
       - name: Release Dev Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: dev-v1.0
-          NOTE: "Development build release"
+          TAG: dev-v${{ needs.build.outputs.VERSION }}
+          NOTE: "Development build #${{ needs.build.outputs.VERSION }}"
         run: |
           echo "Deploying development release..."
           gh release delete "$TAG" -y || true
@@ -66,8 +72,8 @@ jobs:
       - name: Release Staging Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: staging-v1.0
-          NOTE: "Staging release"
+          TAG: staging-v${{ needs.build.outputs.VERSION }}
+          NOTE: "Staging release #${{ needs.build.outputs.VERSION }} for testing"
         run: |
           echo "Deploying staging release..."
           gh release delete "$TAG" -y || true
@@ -91,8 +97,8 @@ jobs:
       - name: Release Production Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: prod-v1.0
-          NOTE: "Production release"
+          TAG: prod-v${{ needs.build.outputs.VERSION }}
+          NOTE: "Production release #${{ needs.build.outputs.VERSION }}"
         run: |
           echo "Deploying production release..."
           gh release delete "$TAG" -y || true
