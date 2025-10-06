@@ -30,23 +30,30 @@ jobs:
 
   # === 第二階段：Deploy to Staging ===
   deploy-staging:
-    needs: build
-    runs-on: ubuntu-latest
-    environment: staging
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifact
+  needs: build
+  runs-on: ubuntu-latest
+  environment: staging
 
-      - name: Release Staging Build
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ vars.BUILD_TAG }}
-          NOTE: ${{ vars.RELEASE_NOTE }}
-        run: |
-          echo "Deploying staging release..."
-          gh release create "${TAG}-staging" build.zip --notes "${NOTE}"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 這行很關鍵，確保能完整抓到 .git 資料夾
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifact
+
+    - name: Release Staging Build
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TAG: ${{ vars.BUILD_TAG }}
+        NOTE: ${{ vars.RELEASE_NOTE }}
+      run: |
+        echo "Deploying staging release..."
+        gh release create "$TAG" build.zip --notes "$NOTE"
+
 
   # === 第三階段：Deploy to Production ===
   deploy-production:
