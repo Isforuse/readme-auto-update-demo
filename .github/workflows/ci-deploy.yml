@@ -22,11 +22,14 @@ jobs:
           name: build-artifact
           path: build.zip
 
-  deploy-staging:
+    deploy-staging:
     needs: build
     runs-on: ubuntu-latest
     environment: staging
     steps:
+      - name: Checkout repository   # ← 新增這一行
+        uses: actions/checkout@v4
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -39,10 +42,10 @@ jobs:
           NOTE: ${{ vars.RELEASE_NOTE }}
         run: |
           echo "Deploying staging release..."
-          # 檢查是否已有同名 release，若有則刪除
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
+
 
   deploy-production:
     needs: deploy-staging
