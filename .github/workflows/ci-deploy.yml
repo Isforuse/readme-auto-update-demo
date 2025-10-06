@@ -1,26 +1,20 @@
-name: CI/CD Deployment Pipeline
+name: CI/CD Deployment
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
-
-permissions:
-  contents: write   # 允許建立與更新 release
 
 jobs:
-  # === 第一階段：Build ===
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create build artifact
+      - name: Build project
         run: |
-          mkdir -p dist
-          echo "Build from $GITHUB_SHA at $(date -u)" > dist/info.txt
-          zip -r build.zip dist
+          echo "Building project..."
+          zip -r build.zip .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -28,49 +22,50 @@ jobs:
           name: build-artifact
           path: build.zip
 
-  # === 第二階段：Deploy to Staging ===
   deploy-staging:
-  needs: build
-  runs-on: ubuntu-latest
-  environment: staging
+    needs: build
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # 這行很關鍵，確保能完整抓到 .git 資料夾
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
 
-    - name: Download build artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: build-artifact
+      - name: Release Staging Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ vars.BUILD_TAG }}
+          NOTE: ${{ vars.RELEASE_NOTE }}
+        run: |
+          echo "Deploying staging release..."
+          gh release create "$TAG" build.zip --notes "$NOTE"
 
-    - name: Release Staging Build
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        TAG: ${{ vars.BUILD_TAG }}
-        NOTE: ${{ vars.RELEASE_NOTE }}
-      run: |
-        echo "Deploying staging release..."
-        gh release create "$TAG" build.zip --notes "$NOTE"
-
-
-  # === 第三階段：Deploy to Production ===
   deploy-production:
     needs: deploy-staging
     runs-on: ubuntu-latest
-    environment: production   # 這裡啟用保護規則（需 reviewer 批准）
+    environment: production
     steps:
-      - name: Download build artifact
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: build-artifact
 
       - name: Release Production Build
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ vars.BUILD_TAG }}
-          NOTE: ${{ vars.RELEASE_NOTE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: prod-v1.0
+          NOTE: "Production release"
         run: |
           echo "Deploying production release..."
-          gh release create "${TAG}-prod" build.zip --notes "${NOTE}"
+          gh release create "$TAG" build.zip --notes "$NOTE"
