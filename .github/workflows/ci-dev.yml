@@ -1,5 +1,5 @@
-name: CI Dev
-
+name: CI Dev Development
+ 
 on:
   push:
     branches: [ main ]
