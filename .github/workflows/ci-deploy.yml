@@ -47,11 +47,14 @@ jobs:
           gh release create "$TAG" build.zip --notes "$NOTE"
 
 
-  deploy-production:
+    deploy-production:
     needs: deploy-staging
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - name: Checkout repository   # ← 同樣新增
+        uses: actions/checkout@v4
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -64,7 +67,6 @@ jobs:
           NOTE: "Production release"
         run: |
           echo "Deploying production release..."
-          # 同樣避免重複 tag 錯誤
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
