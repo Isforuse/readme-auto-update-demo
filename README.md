@@ -14,11 +14,11 @@
 
 ## Recent Commits
 <!--START_SECTION:commits-->
-- chore: update README with commits & PRs (d8bd67c)
-- Update ci-dev.yml (76ede31)
-- Update ci-dev.yml (e778821)
-- Update README.md (78d458f)
-- Update update-readme.yml (a9a5c7b)
+- Update README.md (b28de65)
+- Update ci-deploy.yml (f11d417)
+- Update ci-deploy.yml (2b20ee8)
+- chore: update badges in README (e6c1e28)
+- Update and rename ci-dev.yml to ci-deploy.yml (13c84c4)
 <!--END_SECTION:commits-->
 
 ## Recent PRs
