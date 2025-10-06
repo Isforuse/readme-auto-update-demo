@@ -1,4 +1,4 @@
-name: CI/CD Deployment
+name: CI/CD Deployment Pipeline
 
 on:
   push:
@@ -8,26 +8,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build project
+      - name: Build
         run: |
           echo "Building project..."
           zip -r build.zip .
 
-      - name: Upload artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact
           path: build.zip
 
-    deploy-staging:
+  deploy-staging:
     needs: build
     runs-on: ubuntu-latest
     environment: staging
     steps:
-      - name: Checkout repository   # ← 新增這一行
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Download artifact
@@ -38,21 +38,20 @@ jobs:
       - name: Release Staging Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ vars.BUILD_TAG }}
-          NOTE: ${{ vars.RELEASE_NOTE }}
+          TAG: staging-v1.0
+          NOTE: "Staging release"
         run: |
           echo "Deploying staging release..."
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
 
-
-    deploy-production:
+  deploy-production:
     needs: deploy-staging
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Checkout repository   # ← 同樣新增
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Download artifact
