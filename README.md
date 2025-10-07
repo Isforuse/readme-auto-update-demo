@@ -9,7 +9,7 @@
 
 ## Recent Activity
 <!--START_SECTION:activity-->
-1. ❌ Closed PR [#48](https://github.com/TheDanniCraft/activity-log/pull/48) in [TheDanniCraft/activity-log](https://github.com/TheDanniCraft/activity-log)
+1. ❗ Opened issue [#19](https://github.com/Isforuse/readme-auto-update-demo/issues/19) in [Isforuse/readme-auto-update-demo](https://github.com/Isforuse/readme-auto-update-demo)
 <!--END_SECTION:activity-->
 
 ## Recent Commits
