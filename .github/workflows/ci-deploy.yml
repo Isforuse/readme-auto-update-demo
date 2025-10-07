@@ -176,11 +176,24 @@ jobs:
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
 
-      # 💬 新增：自動在 GitHub Issue 留言通知
-      - name: Comment on GitHub Issue
+           # 💬 自動建立或留言至 Issue
+      - name: Create or comment on GitHub Issue
         if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "💬 Posting deployment comment to GitHub issue..."
-          gh issue comment 1 --body "✅ **Production release (prod-v${{ needs.deploy-staging.outputs.VERSION }})** has been successfully deployed! 🎉"
+          echo "💬 Checking for existing deployment issue..."
+          
+          # 嘗試取得同標題 Issue 的編號
+          issue_number=$(gh issue list --search "Production Deployment Notifications in:title" --json number --jq '.[0].number')
+          
+          # 若無則建立新 issue
+          if [ -z "$issue_number" ]; then
+            echo "🆕 No existing issue found. Creating one..."
+            issue_number=$(gh issue create --title "Production Deployment Notifications" --body "This issue tracks all production release events." --json number --jq '.number')
+          else
+            echo "✅ Found existing issue #$issue_number"
+          fi
+          
+          # 發布留言
+          gh issue comment $issue_number --body "✅ **Production release (prod-v${{ needs.deploy-staging.outputs.VERSION }})** successfully deployed at $(date)! 🎉"
