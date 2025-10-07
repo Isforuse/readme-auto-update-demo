@@ -212,3 +212,4 @@ jobs:
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
           echo "🧹 Removed failed release $TAG due to deployment error."
+          exit 1
