@@ -58,37 +58,46 @@ jobs:
           path: build.zip
 
       # 🧩 語意化版本號自動遞增 (vX.Y.Z)
-      - name: Determine next semantic version
-        id: semver
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "🔍 Checking latest release tag..."
-          latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "")
-          echo "Latest tag found: $latest"
+- name: Determine next semantic version
+  id: semver
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  run: |
+    echo "🔍 Checking latest release tag..."
+    latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "")
+    echo "Latest tag found: $latest"
 
-          # 若沒有任何 release，從 v1.0.0 起始
-          if [[ -z "$latest" ]]; then
-            next="1.0.0"
-          else
-            # 擷取數字組成主版、次版、修訂版
-            major=$(echo "$latest" | grep -oE '[0-9]+' | sed -n 1p)
-            minor=$(echo "$latest" | grep -oE '[0-9]+' | sed -n 2p)
-            patch=$(echo "$latest" | grep -oE '[0-9]+' | sed -n 3p)
+    # 取得最後一次 commit 訊息
+    last_commit=$(git log -1 --pretty=%B)
+    echo "🧾 Last commit message: $last_commit"
 
-            # 若缺少欄位則補 0
-            major=${major:-1}
-            minor=${minor:-0}
-            patch=${patch:-0}
+    # 分析版本位階
+    if [[ "$last_commit" == *"#major"* ]]; then
+      level="major"
+    elif [[ "$last_commit" == *"#minor"* ]]; then
+      level="minor"
+    else
+      level="patch"
+    fi
+    echo "📈 Detected bump level: $level"
 
-            # 預設升級 Patch 位
-            patch=$((patch + 1))
-            next="$major.$minor.$patch"
-          fi
+    # 解析舊版本號
+    major=$(echo "$latest" | grep -oE '[0-9]+' | head -1 || echo 0)
+    minor=$(echo "$latest" | grep -oE '[0-9]+' | head -2 | tail -1 || echo 0)
+    patch=$(echo "$latest" | grep -oE '[0-9]+' | tail -1 || echo 0)
 
-          echo "✅ Next semantic version: v$next"
-          echo "VERSION=$next" >> $GITHUB_OUTPUT
+    # 依等級遞增
+    if [[ "$level" == "major" ]]; then
+      major=$((major + 1)); minor=0; patch=0
+    elif [[ "$level" == "minor" ]]; then
+      minor=$((minor + 1)); patch=0
+    else
+      patch=$((patch + 1))
+    fi
 
+    next="v$major.$minor.$patch"
+    echo "✅ Next version number: $next"
+    echo "VERSION=$next" >> $GITHUB_OUTPUT
 
   # === 2️⃣ Deploy to Dev ===
   deploy-dev:
