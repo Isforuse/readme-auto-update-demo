@@ -57,6 +57,7 @@ jobs:
           name: build-artifact
           path: build.zip
 
+      # 🧩 語意化版本號自動遞增 (vX.Y.Z)
       - name: Determine next semantic version
         id: semver
         env:
@@ -66,14 +67,26 @@ jobs:
           latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "")
           echo "Latest tag found: $latest"
 
+          # 若沒有任何 release，從 v1.0.0 起始
           if [[ -z "$latest" ]]; then
-            next=1
+            next="1.0.0"
           else
-            num=$(echo "$latest" | grep -oE '[0-9]+$' || echo "0")
-            next=$((num + 1))
+            # 擷取數字組成主版、次版、修訂版
+            major=$(echo "$latest" | grep -oE '[0-9]+' | sed -n 1p)
+            minor=$(echo "$latest" | grep -oE '[0-9]+' | sed -n 2p)
+            patch=$(echo "$latest" | grep -oE '[0-9]+' | sed -n 3p)
+
+            # 若缺少欄位則補 0
+            major=${major:-1}
+            minor=${minor:-0}
+            patch=${patch:-0}
+
+            # 預設升級 Patch 位
+            patch=$((patch + 1))
+            next="$major.$minor.$patch"
           fi
 
-          echo "✅ Next version number: v$next"
+          echo "✅ Next semantic version: v$next"
           echo "VERSION=$next" >> $GITHUB_OUTPUT
 
 
@@ -178,8 +191,7 @@ jobs:
           echo "🏁 Deploying production release..."
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
-        
-
+          
           # 嘗試建立正式版 release，若失敗則中斷觸發 rollback
           if gh release create "$TAG" build.zip --notes "$NOTE"; then
             echo "✅ Production release $TAG created successfully."
@@ -196,10 +208,8 @@ jobs:
         run: |
           echo "💬 Checking for existing deployment issue..."
           
-          # 嘗試搜尋同標題的 issue
           issue_number=$(gh issue list --search "Production Deployment Notifications in:title" --json number --jq '.[0].number')
           
-          # 若找不到則建立新的 issue 並擷取編號
           if [ -z "$issue_number" ]; then
             echo "🆕 No existing issue found. Creating one..."
             issue_url=$(gh issue create --title "Production Deployment Notifications" --body "This issue tracks all production release events.")
@@ -209,10 +219,8 @@ jobs:
             echo "✅ Found existing issue #$issue_number"
           fi
           
-          # 留言通知
           gh issue comment $issue_number --body "✅ **Production release (prod-v${{ needs.deploy-staging.outputs.VERSION }})** successfully deployed at $(date)! 🎉"
 
-          # 同步到 Summary 區塊
           echo "### 🚀 Production Release Successful" >> $GITHUB_STEP_SUMMARY
           echo "- Tag: prod-v${{ needs.deploy-staging.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
           echo "- Environment: Production" >> $GITHUB_STEP_SUMMARY
@@ -232,7 +240,6 @@ jobs:
           git tag -d "$TAG" || true
           echo "🧹 Removed failed release $TAG due to deployment error."
 
-          # 顯示於 Summary
           echo "### ⚠️ Rollback Executed" >> $GITHUB_STEP_SUMMARY
           echo "- Failed release $TAG has been deleted automatically." >> $GITHUB_STEP_SUMMARY
           echo "- Time: $(date)" >> $GITHUB_STEP_SUMMARY
