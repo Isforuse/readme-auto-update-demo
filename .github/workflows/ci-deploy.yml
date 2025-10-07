@@ -176,21 +176,14 @@ jobs:
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
 
-      # ✅ 自動在 GitHub Actions Summary 顯示通知
-      - name: Post-deployment notification
-        if: success()
-        run: |
-          echo "### 🚀 Production Release Successful" >> $GITHUB_STEP_SUMMARY
-          echo "**Tag:** prod-v${{ needs.deploy-staging.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** ✅ Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
-          echo "**Time:** $(date)" >> $GITHUB_STEP_SUMMARY
-
-      # 💬 新增：自動在 GitHub Issue 留言通知
-      - name: Comment on GitHub Issue
+            # 💬 自動在最新 Release 留言通知
+      - name: Comment on GitHub Release
         if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: prod-v${{ needs.deploy-staging.outputs.VERSION }}
         run: |
-          echo "💬 Posting deployment comment to GitHub issue..."
-          gh issue comment 1 --body "✅ **Production release (prod-v${{ needs.deploy-staging.outputs.VERSION }})** has been successfully deployed! 🎉"
+          echo "💬 Posting deployment comment to Release page..."
+          release_id=$(gh api repos/${{ github.repository }}/releases/tags/$TAG --jq '.id')
+          gh api repos/${{ github.repository }}/releases/$release_id/comments \
+            -f body="✅ **Production release ($TAG)** has been successfully deployed! 🎉"
