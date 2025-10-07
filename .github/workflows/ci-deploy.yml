@@ -17,7 +17,7 @@ jobs:
 
       - name: Build project
         run: |
-          echo "Building project..."
+          echo "🏗️ Building project..."
           zip -r build.zip .
 
       - name: Upload build artifact
@@ -31,16 +31,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Checking latest release version..."
+          echo "🔍 Checking latest release tag..."
           latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "")
+          echo "Latest tag found: $latest"
+
+          # Remove any non-numeric characters and get the number at the end
           if [[ -z "$latest" ]]; then
-            next="1"
+            next=1
           else
             num=$(echo "$latest" | grep -oE '[0-9]+$' || echo "0")
             next=$((num + 1))
           fi
+
+          echo "✅ Next version number: v$next"
           echo "VERSION=$next" >> $GITHUB_OUTPUT
-          echo "Next version: v$next"
 
   # === 2️⃣ Deploy to Dev ===
   deploy-dev:
@@ -50,8 +54,10 @@ jobs:
     outputs:
       VERSION: ${{ needs.build.outputs.VERSION }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v4
         with:
           name: build-artifact
       - name: Release Dev Build
@@ -60,7 +66,7 @@ jobs:
           TAG: dev-v${{ needs.build.outputs.VERSION }}
           NOTE: "Development build v${{ needs.build.outputs.VERSION }}"
         run: |
-          echo "Deploying development release..."
+          echo "🚀 Deploying development release..."
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
@@ -73,8 +79,10 @@ jobs:
     outputs:
       VERSION: ${{ needs.deploy-dev.outputs.VERSION }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v4
         with:
           name: build-artifact
       - name: Release Staging Build
@@ -83,7 +91,7 @@ jobs:
           TAG: staging-v${{ needs.deploy-dev.outputs.VERSION }}
           NOTE: "Staging release v${{ needs.deploy-dev.outputs.VERSION }} for testing"
         run: |
-          echo "Deploying staging release..."
+          echo "🧪 Deploying staging release..."
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
@@ -94,8 +102,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v4
         with:
           name: build-artifact
       - name: Release Production Build
@@ -104,7 +114,7 @@ jobs:
           TAG: prod-v${{ needs.deploy-staging.outputs.VERSION }}
           NOTE: "Production release v${{ needs.deploy-staging.outputs.VERSION }}"
         run: |
-          echo "Deploying production release..."
+          echo "🏁 Deploying production release..."
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
