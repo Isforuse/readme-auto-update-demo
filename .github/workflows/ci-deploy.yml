@@ -95,7 +95,7 @@ jobs:
             patch=$((patch + 1))
           fi
       
-          next="v$major.$minor.$patch"
+          next="$major.$minor.$patch"
           echo "✅ Next version number: $next"
           echo "VERSION=$next" >> $GITHUB_OUTPUT
 
