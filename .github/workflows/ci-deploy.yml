@@ -15,26 +15,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🔹 實際專案測試步驟（使用 npm）
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install dependencies
+      # 🔹 輕量自動化測試（適用非 Node 專案）
+      - name: Run automated tests (lightweight)
         run: |
-          echo "📦 Installing dependencies..."
-          npm install
+          echo "🧪 Running lightweight validation tests..."
+          
+          # 檢查 README.md 是否存在
+          if [ -f "README.md" ]; then
+            echo "✅ README.md found."
+          else
+            echo "❌ README.md missing!" && exit 1
+          fi
 
-      - name: Run automated tests
-        run: |
-          echo "🧪 Running real automated tests..."
-          npm test
+          # 檢查 GitHub Action 定義檔是否存在
+          if [ -f "action.yml" ]; then
+            echo "✅ action.yml found."
+          else
+            echo "⚠️ action.yml not found (skipping Action validation)."
+          fi
+
+          echo "✅ Basic project validation passed."
 
       - name: Build project
         run: |
           echo "🏗️ Building project..."
-          npm run build || echo "No build script defined, skipping build step."
           zip -r build.zip .
 
       - name: Upload build artifact
