@@ -1,0 +1,8 @@
+
+<!--START_SECTION:badges-->
+![badges](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/badges.yml/badge.svg)
+![ci-deploy](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/ci-deploy.yml/badge.svg)
+![preview-readme](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/preview-readme.yml/badge.svg)
+![update-readme](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/update-readme.yml/badge.svg)
+![validate-readme](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/validate-readme.yml/badge.svg)
+<!--END_SECTION:badges-->
