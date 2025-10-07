@@ -36,7 +36,10 @@ jobs:
           fi
 
           echo "✅ Basic project validation passed."
-
+      - name: Simulate failed test
+        run: |
+          echo "❌ Forcing test failure for demo"
+          exit 1
       # ✅ 將測試結果顯示於 Summary 區塊（上方 Summary 可見）
       - name: Show summary result
         if: success()
