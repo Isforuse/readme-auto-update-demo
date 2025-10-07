@@ -176,7 +176,7 @@ jobs:
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
 
-           # 💬 自動建立或留言至 Issue
+                 # 💬 自動建立或留言至 Issue
       - name: Create or comment on GitHub Issue
         if: success()
         env:
@@ -184,13 +184,16 @@ jobs:
         run: |
           echo "💬 Checking for existing deployment issue..."
           
-          # 嘗試取得同標題 Issue 的編號
+          # 嘗試搜尋同標題的 issue
           issue_number=$(gh issue list --search "Production Deployment Notifications in:title" --json number --jq '.[0].number')
           
-          # 若無則建立新 issue
+          # 若找不到則建立新的 issue
           if [ -z "$issue_number" ]; then
             echo "🆕 No existing issue found. Creating one..."
-            issue_number=$(gh issue create --title "Production Deployment Notifications" --body "This issue tracks all production release events." --json number --jq '.number')
+            gh issue create --title "Production Deployment Notifications" --body "This issue tracks all production release events."
+            
+            # 再次查詢剛建立的 issue 編號
+            issue_number=$(gh issue list --search "Production Deployment Notifications in:title" --json number --jq '.[0].number')
           else
             echo "✅ Found existing issue #$issue_number"
           fi
