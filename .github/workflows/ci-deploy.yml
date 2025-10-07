@@ -151,21 +151,25 @@ jobs:
           gh release create "$TAG" build.zip --notes "$NOTE"
 
 
-       # === 4️⃣ Deploy to Production ===
+  # === 4️⃣ Deploy to Production ===
   deploy-production:
     needs: deploy-staging
     runs-on: ubuntu-latest
     environment: production
     steps:
+      # 📦 檢出專案
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 📥 下載建置產物
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: build-artifact
 
+      # 🚀 正式版部署
       - name: Release Production Build
+        id: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: prod-v${{ needs.deploy-staging.outputs.VERSION }}
@@ -174,7 +178,14 @@ jobs:
           echo "🏁 Deploying production release..."
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
-          gh release create "$TAG" build.zip --notes "$NOTE"
+
+          # 嘗試建立正式版 release，若失敗則中斷觸發 rollback
+          if gh release create "$TAG" build.zip --notes "$NOTE"; then
+            echo "✅ Production release $TAG created successfully."
+          else
+            echo "❌ Release creation failed. Triggering rollback..."
+            exit 1
+          fi
 
       # 💬 自動建立或留言至 Issue
       - name: Create or comment on GitHub Issue
@@ -191,8 +202,6 @@ jobs:
           if [ -z "$issue_number" ]; then
             echo "🆕 No existing issue found. Creating one..."
             issue_url=$(gh issue create --title "Production Deployment Notifications" --body "This issue tracks all production release events.")
-            
-            # 從 URL 擷取 issue 編號（例如 #20）
             issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
             echo "🆕 Created new issue #$issue_number"
           else
@@ -201,6 +210,15 @@ jobs:
           
           # 留言通知
           gh issue comment $issue_number --body "✅ **Production release (prod-v${{ needs.deploy-staging.outputs.VERSION }})** successfully deployed at $(date)! 🎉"
+
+          # 同步到 Summary 區塊
+          echo "### 🚀 Production Release Successful" >> $GITHUB_STEP_SUMMARY
+          echo "- Tag: prod-v${{ needs.deploy-staging.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Environment: Production" >> $GITHUB_STEP_SUMMARY
+          echo "- Issue: #$issue_number" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: ✅ Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "- Time: $(date)" >> $GITHUB_STEP_SUMMARY
+
       # 🧹 Rollback step – 自動清理失敗部署
       - name: Rollback on failure
         if: failure()
@@ -212,4 +230,8 @@ jobs:
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
           echo "🧹 Removed failed release $TAG due to deployment error."
-          exit 1
+
+          # 顯示於 Summary
+          echo "### ⚠️ Rollback Executed" >> $GITHUB_STEP_SUMMARY
+          echo "- Failed release $TAG has been deleted automatically." >> $GITHUB_STEP_SUMMARY
+          echo "- Time: $(date)" >> $GITHUB_STEP_SUMMARY
