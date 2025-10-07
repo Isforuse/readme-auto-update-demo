@@ -151,7 +151,7 @@ jobs:
           gh release create "$TAG" build.zip --notes "$NOTE"
 
 
-     # === 4️⃣ Deploy to Production ===
+       # === 4️⃣ Deploy to Production ===
   deploy-production:
     needs: deploy-staging
     runs-on: ubuntu-latest
@@ -176,14 +176,11 @@ jobs:
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
 
-            # 💬 自動在最新 Release 留言通知
-      - name: Comment on GitHub Release
+      # 💬 新增：自動在 GitHub Issue 留言通知
+      - name: Comment on GitHub Issue
         if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: prod-v${{ needs.deploy-staging.outputs.VERSION }}
         run: |
-          echo "💬 Posting deployment comment to Release page..."
-          release_id=$(gh api repos/${{ github.repository }}/releases/tags/$TAG --jq '.id')
-          gh api repos/${{ github.repository }}/releases/$release_id/comments \
-            -f body="✅ **Production release ($TAG)** has been successfully deployed! 🎉"
+          echo "💬 Posting deployment comment to GitHub issue..."
+          gh issue comment 1 --body "✅ **Production release (prod-v${{ needs.deploy-staging.outputs.VERSION }})** has been successfully deployed! 🎉"
