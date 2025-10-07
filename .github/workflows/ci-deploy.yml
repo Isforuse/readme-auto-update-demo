@@ -151,7 +151,7 @@ jobs:
           gh release create "$TAG" build.zip --notes "$NOTE"
 
 
-  # === 4️⃣ Deploy to Production ===
+    # === 4️⃣ Deploy to Production ===
   deploy-production:
     needs: deploy-staging
     runs-on: ubuntu-latest
@@ -159,13 +159,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      # 🔑 讀取 production 環境機密
-      - name: Show environment secrets
-        run: |
-          echo "🔧 Environment: Production"
-          echo "API_KEY=[secure]" 
-          echo "DEPLOY_TARGET=[secure]"
 
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -177,10 +170,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: prod-v${{ needs.deploy-staging.outputs.VERSION }}
           NOTE: "Production release v${{ needs.deploy-staging.outputs.VERSION }}"
-          API_KEY: ${{ secrets.API_KEY }}
-          DEPLOY_TARGET: ${{ secrets.DEPLOY_TARGET }}
         run: |
-          echo "🏁 Deploying production release to $DEPLOY_TARGET ..."
+          echo "🏁 Deploying production release..."
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
+
+      # ✅ 新增：自動通知（在 Summary 顯示）
+      - name: Post-deployment notification
+        if: success()
+        run: |
+          echo "### 🚀 Production Release Successful" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** prod-v${{ needs.deploy-staging.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "**Time:** $(date)" >> $GITHUB_STEP_SUMMARY
