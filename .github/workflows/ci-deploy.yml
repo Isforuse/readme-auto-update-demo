@@ -151,7 +151,7 @@ jobs:
           gh release create "$TAG" build.zip --notes "$NOTE"
 
 
-    # === 4️⃣ Deploy to Production ===
+     # === 4️⃣ Deploy to Production ===
   deploy-production:
     needs: deploy-staging
     runs-on: ubuntu-latest
@@ -176,7 +176,7 @@ jobs:
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
 
-      # ✅ 新增：自動通知（在 Summary 顯示）
+      # ✅ 自動在 GitHub Actions Summary 顯示通知
       - name: Post-deployment notification
         if: success()
         run: |
@@ -185,3 +185,12 @@ jobs:
           echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
           echo "**Status:** ✅ Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
           echo "**Time:** $(date)" >> $GITHUB_STEP_SUMMARY
+
+      # 💬 新增：自動在 GitHub Issue 留言通知
+      - name: Comment on GitHub Issue
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "💬 Posting deployment comment to GitHub issue..."
+          gh issue comment 1 --body "✅ **Production release (prod-v${{ needs.deploy-staging.outputs.VERSION }})** has been successfully deployed! 🎉"
