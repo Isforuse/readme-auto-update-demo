@@ -35,6 +35,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: dev
+    outputs:
+      VERSION: ${{ needs.build.outputs.VERSION }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -60,6 +62,8 @@ jobs:
     needs: deploy-dev
     runs-on: ubuntu-latest
     environment: staging
+    outputs:
+      VERSION: ${{ needs.deploy-dev.outputs.VERSION }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -72,8 +76,8 @@ jobs:
       - name: Release Staging Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: staging-v${{ needs.build.outputs.VERSION }}
-          NOTE: "Staging release #${{ needs.build.outputs.VERSION }} for testing"
+          TAG: staging-v${{ needs.deploy-dev.outputs.VERSION }}
+          NOTE: "Staging release #${{ needs.deploy-dev.outputs.VERSION }} for testing"
         run: |
           echo "Deploying staging release..."
           gh release delete "$TAG" -y || true
@@ -97,8 +101,8 @@ jobs:
       - name: Release Production Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: prod-v${{ needs.build.outputs.VERSION }}
-          NOTE: "Production release #${{ needs.build.outputs.VERSION }}"
+          TAG: prod-v${{ needs.deploy-staging.outputs.VERSION }}
+          NOTE: "Production release #${{ needs.deploy-staging.outputs.VERSION }}"
         run: |
           echo "Deploying production release..."
           gh release delete "$TAG" -y || true
