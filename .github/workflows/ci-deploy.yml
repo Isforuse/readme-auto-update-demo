@@ -35,6 +35,7 @@ jobs:
           fi
 
           echo "✅ Basic project validation passed."
+          exit1
 
       - name: Build project
         run: |
