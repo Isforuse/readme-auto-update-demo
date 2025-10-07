@@ -176,7 +176,7 @@ jobs:
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
 
-                 # 💬 自動建立或留言至 Issue
+      # 💬 自動建立或留言至 Issue
       - name: Create or comment on GitHub Issue
         if: success()
         env:
@@ -187,16 +187,17 @@ jobs:
           # 嘗試搜尋同標題的 issue
           issue_number=$(gh issue list --search "Production Deployment Notifications in:title" --json number --jq '.[0].number')
           
-          # 若找不到則建立新的 issue
+          # 若找不到則建立新的 issue 並擷取編號
           if [ -z "$issue_number" ]; then
             echo "🆕 No existing issue found. Creating one..."
-            gh issue create --title "Production Deployment Notifications" --body "This issue tracks all production release events."
+            issue_url=$(gh issue create --title "Production Deployment Notifications" --body "This issue tracks all production release events.")
             
-            # 再次查詢剛建立的 issue 編號
-            issue_number=$(gh issue list --search "Production Deployment Notifications in:title" --json number --jq '.[0].number')
+            # 從 URL 擷取 issue 編號（例如 #20）
+            issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
+            echo "🆕 Created new issue #$issue_number"
           else
             echo "✅ Found existing issue #$issue_number"
           fi
           
-          # 發布留言
+          # 留言通知
           gh issue comment $issue_number --body "✅ **Production release (prod-v${{ needs.deploy-staging.outputs.VERSION }})** successfully deployed at $(date)! 🎉"
