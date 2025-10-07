@@ -14,15 +14,13 @@
 
 ## Recent Commits
 <!--START_SECTION:commits-->
+- Update ci-deploy.yml (cab2e34)
+- Update ci-deploy.yml (eb86a5f)
+- chore: update README with commits & PRs (dcb860c)
 - chore: update README with commits & PRs (c17a1cf)
 - Create minor change file
 
 #minor (fd66163)
-- Create major change file
-
-#major (36a8dd9)
-- Update ci-deploy.yml (5023971)
-- Update ci-deploy.yml (9e14204)
 <!--END_SECTION:commits-->
 
 ## Recent PRs
