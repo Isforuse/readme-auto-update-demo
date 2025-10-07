@@ -6,12 +6,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  # === 1️⃣ Build Job (含自動化測試與版本遞增) ===
+    # === 1️⃣ Build Job (含自動化測試與版本遞增) ===
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [18, 20] # 可後續改為動態偵測
+        node: [16, 18, 20, 22]  # ✅ 多版本 Node.js 測試矩陣
     outputs:
       VERSION: ${{ steps.semver.outputs.VERSION }}
 
@@ -20,7 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🔧 安裝 Node.js (根據矩陣版本)
+      # 🔧 安裝 Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -30,17 +30,22 @@ jobs:
       - name: Run automated tests (lightweight)
         run: |
           echo "🧪 Running lightweight validation tests on Node.js ${{ matrix.node }}..."
+          
+          # 檢查 README.md 是否存在
           if [ -f "README.md" ]; then
             echo "✅ README.md found."
           else
             echo "❌ README.md missing!" && exit 1
           fi
+
+          # 檢查 GitHub Action 定義檔是否存在
           if [ -f "action.yml" ]; then
             echo "✅ action.yml found."
           else
             echo "⚠️ action.yml not found (skipping Action validation)."
           fi
-          echo "✅ Validation passed on Node.js ${{ matrix.node }}."
+
+          echo "✅ Basic project validation passed on Node.js ${{ matrix.node }}."
 
       # 🧾 Step 2. 測試結果顯示於 Summary
       - name: Show summary result
@@ -48,23 +53,24 @@ jobs:
         run: |
           echo "### ✅ Automated Tests Passed" >> $GITHUB_STEP_SUMMARY
           echo "- Node.js version: ${{ matrix.node }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Basic validation passed successfully." >> $GITHUB_STEP_SUMMARY
+          echo "- Validation successful." >> $GITHUB_STEP_SUMMARY
 
       # 🏗️ Step 3. 建置專案
       - name: Build project
         run: |
-          echo "🏗️ Building project..."
+          echo "🏗️ Building project for Node.js ${{ matrix.node }}..."
           zip -r build.zip .
 
-      # 📦 Step 4. 上傳建置產物
+      # 📦 Step 4. 上傳建置產物（依版本命名）
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifact
+          name: build-artifact-${{ matrix.node }}
           path: build.zip
 
-      # 🔢 Step 5. 語意化版本號自動遞增
+      # 🔢 Step 5. 語意化版本號自動遞增（只在最後一個矩陣版本執行）
       - name: Determine next semantic version
+        if: matrix.node == '22'
         id: semver
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
