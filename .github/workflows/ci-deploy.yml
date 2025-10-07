@@ -201,3 +201,14 @@ jobs:
           
           # 留言通知
           gh issue comment $issue_number --body "✅ **Production release (prod-v${{ needs.deploy-staging.outputs.VERSION }})** successfully deployed at $(date)! 🎉"
+      # 🧹 Rollback step – 自動清理失敗部署
+      - name: Rollback on failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: prod-v${{ needs.deploy-staging.outputs.VERSION }}
+        run: |
+          echo "⚠️ Deployment failed! Cleaning up release..."
+          gh release delete "$TAG" -y || true
+          git tag -d "$TAG" || true
+          echo "🧹 Removed failed release $TAG due to deployment error."
