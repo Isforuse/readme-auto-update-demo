@@ -14,11 +14,11 @@
 
 ## Recent Commits
 <!--START_SECTION:commits-->
+- chore: update README with commits & PRs (0e82925)
 - Update ci-deploy.yml (0666cfd)
 - Update ci-deploy.yml (af0345e)
 - chore: update README with commits & PRs (4b856d0)
 - Update ci-deploy.yml (cab2e34)
-- Update ci-deploy.yml (eb86a5f)
 <!--END_SECTION:commits-->
 
 ## Recent PRs
