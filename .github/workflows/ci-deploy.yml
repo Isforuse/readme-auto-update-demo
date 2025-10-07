@@ -37,7 +37,7 @@ jobs:
 
           echo "✅ Basic project validation passed." 
           
-      # ✅ 將測試結果顯示於 Summary 區塊（上方 Summary 可見）
+      # ✅ 將測試結果顯示於 Summary 區塊
       - name: Show summary result
         if: success()
         run: |
@@ -76,6 +76,7 @@ jobs:
           echo "✅ Next version number: v$next"
           echo "VERSION=$next" >> $GITHUB_OUTPUT
 
+
   # === 2️⃣ Deploy to Dev ===
   deploy-dev:
     needs: build
@@ -86,20 +87,32 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # 🔑 讀取 dev 環境機密
+      - name: Show environment secrets
+        run: |
+          echo "🔧 Environment: Development"
+          echo "API_KEY=[secure]" 
+          echo "DEPLOY_TARGET=[secure]"
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: build-artifact
+
       - name: Release Dev Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: dev-v${{ needs.build.outputs.VERSION }}
           NOTE: "Development build v${{ needs.build.outputs.VERSION }}"
+          API_KEY: ${{ secrets.API_KEY }}
+          DEPLOY_TARGET: ${{ secrets.DEPLOY_TARGET }}
         run: |
-          echo "🚀 Deploying development release..."
+          echo "🚀 Deploying development release to $DEPLOY_TARGET ..."
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
+
 
   # === 3️⃣ Deploy to Staging ===
   deploy-staging:
@@ -111,20 +124,32 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # 🔑 讀取 staging 環境機密
+      - name: Show environment secrets
+        run: |
+          echo "🔧 Environment: Staging"
+          echo "API_KEY=[secure]" 
+          echo "DEPLOY_TARGET=[secure]"
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: build-artifact
+
       - name: Release Staging Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: staging-v${{ needs.deploy-dev.outputs.VERSION }}
           NOTE: "Staging release v${{ needs.deploy-dev.outputs.VERSION }} for testing"
+          API_KEY: ${{ secrets.API_KEY }}
+          DEPLOY_TARGET: ${{ secrets.DEPLOY_TARGET }}
         run: |
-          echo "🧪 Deploying staging release..."
+          echo "🧪 Deploying staging release to $DEPLOY_TARGET ..."
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
+
 
   # === 4️⃣ Deploy to Production ===
   deploy-production:
@@ -134,17 +159,28 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # 🔑 讀取 production 環境機密
+      - name: Show environment secrets
+        run: |
+          echo "🔧 Environment: Production"
+          echo "API_KEY=[secure]" 
+          echo "DEPLOY_TARGET=[secure]"
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: build-artifact
+
       - name: Release Production Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: prod-v${{ needs.deploy-staging.outputs.VERSION }}
           NOTE: "Production release v${{ needs.deploy-staging.outputs.VERSION }}"
+          API_KEY: ${{ secrets.API_KEY }}
+          DEPLOY_TARGET: ${{ secrets.DEPLOY_TARGET }}
         run: |
-          echo "🏁 Deploying production release..."
+          echo "🏁 Deploying production release to $DEPLOY_TARGET ..."
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
