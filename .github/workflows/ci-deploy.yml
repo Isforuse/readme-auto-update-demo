@@ -7,7 +7,7 @@ on:
 
 jobs:
   # === 1️⃣ Build Job (含自動化測試與版本遞增) ===
-  build:
+   build:
     runs-on: ubuntu-latest
     outputs:
       VERSION: ${{ steps.semver.outputs.VERSION }}
@@ -15,14 +15,53 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🔹 新增自動化測試 / Linting 步驟
+      # 🔹 實際專案測試步驟（使用 npm）
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          echo "📦 Installing dependencies..."
+          npm install
+
       - name: Run automated tests
         run: |
-          echo "🧪 Running automated tests..."
-          # 以下模擬測試結果 (可依實際專案改成 npm test / pytest / go test ...)
-          echo "All tests passed successfully!"
-          # 若要模擬測試失敗，可使用 exit 1 測試 pipeline 中斷效果
-          exit 1
+          echo "🧪 Running real automated tests..."
+          npm test
+
+      - name: Build project
+        run: |
+          echo "🏗️ Building project..."
+          npm run build || echo "No build script defined, skipping build step."
+          zip -r build.zip .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: build.zip
+
+      - name: Determine next semantic version
+        id: semver
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Checking latest release tag..."
+          latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "")
+          echo "Latest tag found: $latest"
+
+          if [[ -z "$latest" ]]; then
+            next=1
+          else
+            num=$(echo "$latest" | grep -oE '[0-9]+$' || echo "0")
+            next=$((num + 1))
+          fi
+
+          echo "✅ Next version number: v$next"
+          echo "VERSION=$next" >> $GITHUB_OUTPUT
+
 
       - name: Build project
         run: |
