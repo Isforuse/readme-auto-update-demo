@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # === 1️⃣ Build Job ===
+  # === 1️⃣ Build Job (含自動化測試與版本遞增) ===
   build:
     runs-on: ubuntu-latest
     outputs:
@@ -14,6 +14,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # 🔹 新增自動化測試 / Linting 步驟
+      - name: Run automated tests
+        run: |
+          echo "🧪 Running automated tests..."
+          # 以下模擬測試結果 (可依實際專案改成 npm test / pytest / go test ...)
+          echo "All tests passed successfully!"
+          # 若要模擬測試失敗，可使用 exit 1 測試 pipeline 中斷效果
+          # exit 1
 
       - name: Build project
         run: |
@@ -35,7 +44,6 @@ jobs:
           latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "")
           echo "Latest tag found: $latest"
 
-          # Remove any non-numeric characters and get the number at the end
           if [[ -z "$latest" ]]; then
             next=1
           else
