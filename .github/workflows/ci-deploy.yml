@@ -8,54 +8,134 @@ on:
 jobs:
   # === 1️⃣ Build Job (含自動化測試與版本遞增) ===
   build:
-    runs-on: ubuntu-latest
-    outputs:
-      VERSION: ${{ steps.semver.outputs.VERSION }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  runs-on: ubuntu-latest
+  outputs:
+    VERSION: ${{ steps.semver.outputs.VERSION }}
 
-      # 🔹 輕量自動化測試（適用非 Node 專案）
-      - name: Run automated tests (lightweight)
-        id: test
-        run: |
-          echo "🧪 Running lightweight validation tests..."
-          
-          # 檢查 README.md 是否存在
-          if [ -f "README.md" ]; then
-            echo "✅ README.md found."
-          else
-            echo "❌ README.md missing!" && exit 1
-          fi
+  steps:
+    # 📦 檢出原始碼
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-          # 檢查 GitHub Action 定義檔是否存在
-          if [ -f "action.yml" ]; then
-            echo "✅ action.yml found."
-          else
-            echo "⚠️ action.yml not found (skipping Action validation)."
-          fi
+    # 🔍 Step 1. 自動偵測 Node.js 版本
+    - name: Detect Node versions dynamically
+      id: detect
+      run: |
+        echo "🔍 Detecting Node.js versions..."
+        if [ -f package.json ]; then
+          versions=$(jq -r '.engines.node' package.json | tr -d '>=<' | tr ',' ' ')
+        elif [ -f .nvmrc ]; then
+          versions=$(cat .nvmrc)
+        else
+          versions="18 20"  # fallback 預設版本
+        fi
+        echo "Detected Node.js versions: $versions"
+        echo "versions=$versions" >> $GITHUB_OUTPUT
 
-          echo "✅ Basic project validation passed." 
-          
-      # ✅ 將測試結果顯示於 Summary 區塊
-      - name: Show summary result
-        if: success()
-        run: |
-          echo "### ✅ Automated Tests Passed" >> $GITHUB_STEP_SUMMARY
-          echo "- README.md found" >> $GITHUB_STEP_SUMMARY
-          echo "- action.yml validated (or skipped)" >> $GITHUB_STEP_SUMMARY
-          echo "- Project validation completed successfully." >> $GITHUB_STEP_SUMMARY
+    # ⚙️ Step 2. 生成動態矩陣
+    - name: Generate dynamic matrix
+      id: matrix
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const versions = process.env.VERSIONS || "18 20";
+          const arr = versions.split(" ").filter(v => v);
+          core.setOutput("matrix", JSON.stringify(arr));
+        env:
+          VERSIONS: ${{ steps.detect.outputs.versions }}
 
-      - name: Build project
-        run: |
-          echo "🏗️ Building project..."
-          zip -r build.zip .
+    # 🧪 Step 3. 在多版本環境中進行輕量測試
+    - name: Run automated tests (lightweight)
+      id: test
+      strategy:
+        matrix:
+          node: ${{ fromJson(steps.matrix.outputs.matrix) }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node }}
+      run: |
+        echo "🧪 Running lightweight validation tests on Node.js ${{ matrix.node }}..."
+        
+        # 檢查 README.md 是否存在
+        if [ -f "README.md" ]; then
+          echo "✅ README.md found."
+        else
+          echo "❌ README.md missing!" && exit 1
+        fi
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifact
-          path: build.zip
+        # 檢查 GitHub Action 定義檔是否存在
+        if [ -f "action.yml" ]; then
+          echo "✅ action.yml found."
+        else
+          echo "⚠️ action.yml not found (skipping Action validation)."
+        fi
+
+        echo "✅ Basic project validation passed on Node.js ${{ matrix.node }}."
+    
+    # 🧾 Step 4. 測試結果顯示於 Summary
+    - name: Show summary result
+      if: success()
+      run: |
+        echo "### ✅ Automated Tests Passed" >> $GITHUB_STEP_SUMMARY
+        echo "- Multi-version validation completed successfully" >> $GITHUB_STEP_SUMMARY
+        echo "- Detected Node.js versions: ${{ steps.detect.outputs.versions }}" >> $GITHUB_STEP_SUMMARY
+        echo "- All matrix tests passed." >> $GITHUB_STEP_SUMMARY
+
+    # 🏗️ Step 5. 建置專案
+    - name: Build project
+      run: |
+        echo "🏗️ Building project..."
+        zip -r build.zip .
+
+    # 📦 Step 6. 上傳產物
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifact
+        path: build.zip
+
+    # 🔢 Step 7. 語意化版本號自動遞增
+    - name: Determine next semantic version
+      id: semver
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "🔍 Checking latest release tag..."
+        latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "")
+        echo "Latest tag found: $latest"
+      
+        # 取得最後一次 commit 訊息
+        last_commit=$(git log -1 --pretty=%B)
+        echo "🧾 Last commit message: $last_commit"
+      
+        # 分析版本位階
+        if [[ "$last_commit" == *"#major"* ]]; then
+          level="major"
+        elif [[ "$last_commit" == *"#minor"* ]]; then
+          level="minor"
+        else
+          level="patch"
+        fi
+        echo "📈 Detected bump level: $level"
+      
+        # 解析舊版本號
+        major=$(echo "$latest" | grep -oE '[0-9]+' | head -1 || echo 0)
+        minor=$(echo "$latest" | grep -oE '[0-9]+' | head -2 | tail -1 || echo 0)
+        patch=$(echo "$latest" | grep -oE '[0-9]+' | tail -1 || echo 0)
+      
+        # 依等級遞增
+        if [[ "$level" == "major" ]]; then
+          major=$((major + 1)); minor=0; patch=0
+        elif [[ "$level" == "minor" ]]; then
+          minor=$((minor + 1)); patch=0
+        else
+          patch=$((patch + 1))
+        fi
+      
+        next="v$major.$minor.$patch"
+        echo "✅ Next version number: $next"
+        echo "VERSION=$next" >> $GITHUB_OUTPUT
+
 
       # 🧩 語意化版本號自動遞增 (vX.Y.Z)
       - name: Determine next semantic version
