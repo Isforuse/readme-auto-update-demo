@@ -178,17 +178,15 @@ jobs:
           echo "🏁 Deploying production release..."
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
-          
-          echo "❌ Simulating error for rollback test..."
-          exit 1
+        
 
-          # # 嘗試建立正式版 release，若失敗則中斷觸發 rollback
-          # if gh release create "$TAG" build.zip --notes "$NOTE"; then
-          #   echo "✅ Production release $TAG created successfully."
-          # else
-          #   echo "❌ Release creation failed. Triggering rollback..."
-          #   exit 1
-          # fi
+          # 嘗試建立正式版 release，若失敗則中斷觸發 rollback
+          if gh release create "$TAG" build.zip --notes "$NOTE"; then
+            echo "✅ Production release $TAG created successfully."
+          else
+            echo "❌ Release creation failed. Triggering rollback..."
+            exit 1
+          fi
 
       # 💬 自動建立或留言至 Issue
       - name: Create or comment on GitHub Issue
