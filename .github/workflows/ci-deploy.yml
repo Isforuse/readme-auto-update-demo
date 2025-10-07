@@ -6,12 +6,12 @@ on:
   workflow_dispatch:
 
 jobs:
-    # === 1️⃣ Build Job (含自動化測試與版本遞增) ===
+  # === 1️⃣ Build Job (含多版本測試與語意化版本遞增) ===
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [16, 18, 20, 22]  # ✅ 多版本 Node.js 測試矩陣
+        node: [16, 18, 20, 22]  # ✅ 測試多版本 Node.js
     outputs:
       VERSION: ${{ steps.semver.outputs.VERSION }}
 
@@ -45,7 +45,7 @@ jobs:
             echo "⚠️ action.yml not found (skipping Action validation)."
           fi
 
-          echo "✅ Basic project validation passed on Node.js ${{ matrix.node }}."
+          echo "✅ Basic validation passed on Node.js ${{ matrix.node }}."
 
       # 🧾 Step 2. 測試結果顯示於 Summary
       - name: Show summary result
@@ -68,7 +68,7 @@ jobs:
           name: build-artifact-${{ matrix.node }}
           path: build.zip
 
-      # 🔢 Step 5. 語意化版本號自動遞增（只在最後一個矩陣版本執行）
+      # 🔢 Step 5. 語意化版本號自動遞增（只在 Node 22 執行）
       - name: Determine next semantic version
         if: matrix.node == '22'
         id: semver
@@ -111,6 +111,7 @@ jobs:
           echo "✅ Next version number: $next"
           echo "VERSION=$next" >> $GITHUB_OUTPUT
 
+
   # === 2️⃣ Deploy to Dev ===
   deploy-dev:
     needs: build
@@ -127,10 +128,11 @@ jobs:
           echo "API_KEY=[secure]"
           echo "DEPLOY_TARGET=[secure]"
 
+      # ✅ 改：指定下載 Node 22 版本產物
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: build-artifact
+          name: build-artifact-22
 
       - name: Release Dev Build
         env:
@@ -142,6 +144,7 @@ jobs:
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
+
 
   # === 3️⃣ Deploy to Staging ===
   deploy-staging:
@@ -159,10 +162,11 @@ jobs:
           echo "API_KEY=[secure]"
           echo "DEPLOY_TARGET=[secure]"
 
+      # ✅ 改：指定下載 Node 22 版本產物
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: build-artifact
+          name: build-artifact-22
 
       - name: Release Staging Build
         env:
@@ -175,6 +179,7 @@ jobs:
           git tag -d "$TAG" || true
           gh release create "$TAG" build.zip --notes "$NOTE"
 
+
   # === 4️⃣ Deploy to Production ===
   deploy-production:
     needs: deploy-staging
@@ -183,9 +188,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      # ✅ 改：指定下載 Node 22 版本產物
       - uses: actions/download-artifact@v4
         with:
-          name: build-artifact
+          name: build-artifact-22
 
       - name: Release Production Build
         id: release
@@ -197,6 +204,7 @@ jobs:
           echo "🏁 Deploying Production release..."
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
+
           if gh release create "$TAG" build.zip --notes "$NOTE"; then
             echo "✅ Production release created successfully."
           else
