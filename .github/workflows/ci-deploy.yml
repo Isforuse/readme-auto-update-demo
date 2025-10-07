@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      VERSION: ${{ steps.version.outputs.version }}
+      VERSION: ${{ steps.semver.outputs.VERSION }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,9 +26,21 @@ jobs:
           name: build-artifact
           path: build.zip
 
-      - name: Generate dynamic version number
-        id: version
-        run: echo "version=${GITHUB_RUN_NUMBER}" >> $GITHUB_OUTPUT
+      - name: Determine next semantic version
+        id: semver
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Checking latest release version..."
+          latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "")
+          if [[ -z "$latest" ]]; then
+            next="1"
+          else
+            num=$(echo "$latest" | grep -oE '[0-9]+$' || echo "0")
+            next=$((num + 1))
+          fi
+          echo "VERSION=$next" >> $GITHUB_OUTPUT
+          echo "Next version: v$next"
 
   # === 2️⃣ Deploy to Dev ===
   deploy-dev:
@@ -38,19 +50,15 @@ jobs:
     outputs:
       VERSION: ${{ needs.build.outputs.VERSION }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-artifact
-
       - name: Release Dev Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: dev-v${{ needs.build.outputs.VERSION }}
-          NOTE: "Development release #${{ needs.build.outputs.VERSION }}"
+          NOTE: "Development build v${{ needs.build.outputs.VERSION }}"
         run: |
           echo "Deploying development release..."
           gh release delete "$TAG" -y || true
@@ -65,19 +73,15 @@ jobs:
     outputs:
       VERSION: ${{ needs.deploy-dev.outputs.VERSION }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-artifact
-
       - name: Release Staging Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: staging-v${{ needs.deploy-dev.outputs.VERSION }}
-          NOTE: "Staging release #${{ needs.deploy-dev.outputs.VERSION }} for testing"
+          NOTE: "Staging release v${{ needs.deploy-dev.outputs.VERSION }} for testing"
         run: |
           echo "Deploying staging release..."
           gh release delete "$TAG" -y || true
@@ -90,19 +94,15 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-artifact
-
       - name: Release Production Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: prod-v${{ needs.deploy-staging.outputs.VERSION }}
-          NOTE: "Production release #${{ needs.deploy-staging.outputs.VERSION }}"
+          NOTE: "Production release v${{ needs.deploy-staging.outputs.VERSION }}"
         run: |
           echo "Deploying production release..."
           gh release delete "$TAG" -y || true
