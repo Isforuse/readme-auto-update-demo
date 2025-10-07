@@ -17,6 +17,7 @@ jobs:
 
       # 🔹 輕量自動化測試（適用非 Node 專案）
       - name: Run automated tests (lightweight)
+        id: test
         run: |
           echo "🧪 Running lightweight validation tests..."
           
@@ -35,7 +36,15 @@ jobs:
           fi
 
           echo "✅ Basic project validation passed."
-          exit1
+
+      # ✅ 將測試結果顯示於 Summary 區塊（上方 Summary 可見）
+      - name: Show summary result
+        if: success()
+        run: |
+          echo "### ✅ Automated Tests Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- README.md found" >> $GITHUB_STEP_SUMMARY
+          echo "- action.yml validated (or skipped)" >> $GITHUB_STEP_SUMMARY
+          echo "- Project validation completed successfully." >> $GITHUB_STEP_SUMMARY
 
       - name: Build project
         run: |
