@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      VERSION: ${{ steps.version.outputs.VERSION }}
+      VERSION: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
 
       - name: Generate dynamic version number
         id: version
-        run: echo "VERSION=${GITHUB_RUN_NUMBER}" >> $GITHUB_OUTPUT
+        run: echo "version=${GITHUB_RUN_NUMBER}" >> $GITHUB_OUTPUT
 
   # === 2️⃣ Deploy to Dev ===
   deploy-dev:
@@ -48,7 +48,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: dev-v${{ needs.build.outputs.VERSION }}
-          NOTE: "Development build #${{ needs.build.outputs.VERSION }}"
+          NOTE: "Development release #${{ needs.build.outputs.VERSION }}"
         run: |
           echo "Deploying development release..."
           gh release delete "$TAG" -y || true
