@@ -22,7 +22,7 @@ jobs:
           # 以下模擬測試結果 (可依實際專案改成 npm test / pytest / go test ...)
           echo "All tests passed successfully!"
           # 若要模擬測試失敗，可使用 exit 1 測試 pipeline 中斷效果
-          # exit 1
+          exit 1
 
       - name: Build project
         run: |
