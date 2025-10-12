@@ -1,12 +1,5 @@
-// 一個最小測試檔，模擬單元測試
+// 模擬單元測試，刻意讓測試失敗
 console.log("🧪 Running mock tests...");
 
-// 假設條件：dist/output.txt 必須存在
-const fs = require("fs");
-if (fs.existsSync("dist/output.txt")) {
-  console.log("✅ Test passed: build artifact exists.");
-  process.exit(0); // 成功
-} else {
-  console.error("❌ Test failed: build artifact missing!");
-  process.exit(1); // 失敗
-}
+// 模擬一個錯誤狀況
+throw new Error("❌ Simulated test failure: this is a forced error.");
