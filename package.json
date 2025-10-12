@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A minimal project for CI/CD testing",
   "scripts": {
+    "test": "node test.js"
     "test": "echo '🧪 Running mock tests...' && exit 0",
     "build": "echo '🏗️ Building project...' && mkdir -p dist && echo 'build output' > dist/output.txt"
   }
