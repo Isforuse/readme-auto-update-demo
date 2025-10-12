@@ -1,4 +1,4 @@
-name: CI/CD Deployment Assignment5
+  name: CI/CD Deployment Assignment5
 
 on:
   push:
@@ -210,3 +210,14 @@ jobs:
         run: |
           gh issue create --title "❌ Production Deployment Failed" \
             --body "Production deployment failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
+
+      - name: Rollback on failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: prod-${{ needs.deploy-staging.outputs.VERSION }}
+        run: |
+          echo "⚠️ Deployment failed, cleaning up release..."
+          gh release delete "$TAG" -y || true
+          git tag -d "$TAG" || true
+          echo "🧹 Rollback executed for $TAG."
