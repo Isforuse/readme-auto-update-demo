@@ -6,21 +6,18 @@ on:
   workflow_dispatch:
 
 jobs:
-  # === 1️⃣ Build Job (多版本 + 語意化版本號) ===
+  # === 1️⃣ Build Job ===
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [16, 18, 20, 22]
+        node: [22]
     outputs:
       VERSION: ${{ steps.semver.outputs.VERSION }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
 
@@ -28,67 +25,35 @@ jobs:
         run: |
           echo "🏗️ Building project for Node.js ${{ matrix.node }}..."
           mkdir -p dist
-          echo "dummy output for Node.js ${{ matrix.node }}" > dist/output.txt
-          zip -r build.zip dist/
+          echo "dummy output" > dist/output.txt
+          zip -r build-${{ matrix.node }}.zip dist/
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: build-artifact-${{ matrix.node }}
-          path: build.zip
+          name: build-artifact
+          path: build-${{ matrix.node }}.zip
 
-      # 語意化版本 (只在 Node 22)
       - name: Determine next semantic version
-        if: matrix.node == '22'
         id: semver
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "")
-          last_commit=$(git log -1 --pretty=%B)
-
-          if [[ "$last_commit" == *"#major"* ]]; then
-            level="major"
-          elif [[ "$last_commit" == *"#minor"* ]]; then
-            level="minor"
-          else
-            level="patch"
-          fi
-
-          major=$(echo "$latest" | grep -oE '[0-9]+' | head -1 || echo 0)
-          minor=$(echo "$latest" | grep -oE '[0-9]+' | head -2 | tail -1 || echo 0)
-          patch=$(echo "$latest" | grep -oE '[0-9]+' | tail -1 || echo 0)
-
-          if [[ "$level" == "major" ]]; then
-            major=$((major+1)); minor=0; patch=0
-          elif [[ "$level" == "minor" ]]; then
-            minor=$((minor+1)); patch=0
-          else
-            patch=$((patch+1))
-          fi
-
-          next="v$major.$minor.$patch"
-          echo "VERSION=$next" >> $GITHUB_OUTPUT
+        run: echo "VERSION=v1.0.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
 
   # === 2️⃣ Unit Test Job ===
   test-unit:
     runs-on: ubuntu-latest
     needs: build
-    env:
-      TEST_ENV: unit
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: build-artifact-22
-          path: .
+          name: build-artifact
+          path: ./artifact
 
-      - name: Unzip build
-        run: unzip build.zip -d dist
+      - name: Unzip artifact
+        run: unzip ./artifact/build-22.zip -d ./artifact
 
       - name: Run unit tests
         run: |
-          echo "🧪 Running unit tests in $TEST_ENV..."
-          if [ -f "dist/output.txt" ]; then
+          echo "🧪 Running unit tests in UNIT..."
+          if [ -f "./artifact/dist/output.txt" ]; then
             echo "✅ Unit test passed."
           else
             echo "❌ Unit test failed."
@@ -99,26 +64,25 @@ jobs:
   test-integration:
     runs-on: ubuntu-latest
     needs: test-unit
-    env:
-      TEST_ENV: integration
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: build-artifact-22
-          path: .
+          name: build-artifact
+          path: ./artifact
 
-      - name: Unzip build
-        run: unzip build.zip -d dist
+      - name: Unzip artifact
+        run: unzip ./artifact/build-22.zip -d ./artifact
 
       - name: Run integration tests
         run: |
-          echo "🧪 Running integration tests in $TEST_ENV..."
-          if grep -q "dummy output" dist/output.txt; then
+          echo "🧪 Running integration tests..."
+          if grep -q "dummy output" ./artifact/dist/output.txt; then
             echo "✅ Integration test passed."
           else
             echo "❌ Integration test failed."
             exit 1
           fi
+
 
   # === 4️⃣ Deploy to Staging ===
   deploy-staging:
