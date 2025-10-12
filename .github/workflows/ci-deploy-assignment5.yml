@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # === 1️⃣ Build Job (多版本 Build) ===
+  # === 1️⃣ Build Job (多版本 + 語意化版本號) ===
   build:
     runs-on: ubuntu-latest
     strategy:
@@ -20,6 +20,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+
+      # 輕量檢查
+      - name: Lightweight validation
+        run: |
+          if [ -f "README.md" ]; then
+            echo "✅ README.md found"
+          else
+            echo "❌ README.md missing" && exit 1
+          fi
 
       - name: Build project
         run: |
@@ -37,9 +46,36 @@ jobs:
       - name: Determine next semantic version
         if: matrix.node == '22'
         id: semver
-        run: echo "VERSION=v1.0.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "")
+          last_commit=$(git log -1 --pretty=%B)
 
-  # === 2️⃣ Unit Test Job (專測 Node.js 22) ===
+          if [[ "$last_commit" == *"#major"* ]]; then
+            level="major"
+          elif [[ "$last_commit" == *"#minor"* ]]; then
+            level="minor"
+          else
+            level="patch"
+          fi
+
+          major=$(echo "$latest" | grep -oE '[0-9]+' | head -1 || echo 0)
+          minor=$(echo "$latest" | grep -oE '[0-9]+' | head -2 | tail -1 || echo 0)
+          patch=$(echo "$latest" | grep -oE '[0-9]+' | tail -1 || echo 0)
+
+          if [[ "$level" == "major" ]]; then
+            major=$((major+1)); minor=0; patch=0
+          elif [[ "$level" == "minor" ]]; then
+            minor=$((minor+1)); patch=0
+          else
+            patch=$((patch+1))
+          fi
+
+          next="v$major.$minor.$patch"
+          echo "VERSION=$next" >> $GITHUB_OUTPUT
+
+  # === 2️⃣ Unit Test Job ===
   test-unit:
     runs-on: ubuntu-latest
     needs: build
@@ -49,17 +85,14 @@ jobs:
           name: build-artifact-22
           path: ./artifact
 
-      - name: Unzip artifact
-        run: unzip ./artifact/build-22.zip -d ./artifact
+      - run: unzip ./artifact/build-22.zip -d ./artifact
 
       - name: Run unit tests
         run: |
-          echo "🧪 Running unit tests (Node.js 22)..."
           if [ -f "./artifact/dist/output.txt" ]; then
-            echo "✅ Unit test passed."
+            echo "✅ Unit test passed"
           else
-            echo "❌ Unit test failed."
-            exit 1
+            echo "❌ Unit test failed" && exit 1
           fi
 
   # === 3️⃣ Integration Test Job ===
@@ -72,72 +105,100 @@ jobs:
           name: build-artifact-22
           path: ./artifact
 
-      - name: Unzip artifact
-        run: unzip ./artifact/build-22.zip -d ./artifact
+      - run: unzip ./artifact/build-22.zip -d ./artifact
 
       - name: Run integration tests
         run: |
-          echo "🧪 Running integration tests..."
           if grep -q "dummy output" ./artifact/dist/output.txt; then
-            echo "✅ Integration test passed."
+            echo "✅ Integration test passed"
           else
-            echo "❌ Integration test failed."
-            exit 1
+            echo "❌ Integration test failed" && exit 1
           fi
 
-  # === 4️⃣ Deploy to Staging (Node.js 22) ===
-  deploy-staging:
+  # === 4️⃣ Deploy to Dev ===
+  deploy-dev:
     runs-on: ubuntu-latest
     needs: test-integration
-    environment: staging
+    environment: dev
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: build-artifact-22
           path: ./artifact
 
-      - name: Unzip artifact
-        run: unzip ./artifact/build-22.zip -d ./artifact
+      - run: unzip ./artifact/build-22.zip -d ./artifact
+
+      - name: Release Dev Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: dev-${{ needs.build.outputs.VERSION }}
+        run: |
+          gh release delete "$TAG" -y || true
+          gh release create "$TAG" ./artifact/dist/output.txt --notes "Dev release $TAG"
+
+  # === 5️⃣ Deploy to Staging ===
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: deploy-dev
+    environment: staging
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact-22
+          path: ./artifact
+
+      - run: unzip ./artifact/build-22.zip -d ./artifact
 
       - name: Release Staging Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: staging-${{ needs.build.outputs.VERSION }}
         run: |
-          echo "🚀 Deploying to STAGING..."
-          ts=$(date +%s)
-          TAG="staging-$ts"
           gh release delete "$TAG" -y || true
-          git tag -d "$TAG" || true
           gh release create "$TAG" ./artifact/dist/output.txt --notes "Staging release $TAG"
 
-  # === 5️⃣ Deploy to Production (Node.js 22) ===
+  # === 6️⃣ Deploy to Production ===
   deploy-production:
     runs-on: ubuntu-latest
     needs: deploy-staging
-    environment: production   # ⚠️ 在 repo 設定 reviewer approval
+    environment: production
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: build-artifact-22
           path: ./artifact
 
-      - name: Unzip artifact
-        run: unzip ./artifact/build-22.zip -d ./artifact
+      - run: unzip ./artifact/build-22.zip -d ./artifact
 
       - name: Release Production Build
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: prod-${{ needs.deploy-staging.outputs.VERSION }}
+        run: |
+          if gh release create "$TAG" ./artifact/dist/output.txt --notes "Production release $TAG"; then
+            echo "✅ Production release created"
+          else
+            echo "❌ Release failed, rollback triggered" && exit 1
+          fi
+
+      - name: Comment on GitHub Issue
+        if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "🏁 Deploying to PRODUCTION..."
-          ts=$(date +%s)
-          TAG="prod-$ts"
+          issue_number=$(gh issue list --search "Production Deployment Notifications in:title" --json number --jq '.[0].number')
+          if [ -z "$issue_number" ]; then
+            issue_url=$(gh issue create --title "Production Deployment Notifications" --body "Tracking all production releases.")
+            issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
+          fi
+          gh issue comment $issue_number --body "✅ Production release (${TAG}) deployed at $(date)."
+
+      - name: Rollback on failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: prod-${{ needs.deploy-staging.outputs.VERSION }}
+        run: |
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
-          if gh release create "$TAG" ./artifact/dist/output.txt --notes "Production release $TAG"; then
-            echo "✅ Production release created."
-          else
-            echo "❌ Release failed, rollback triggered."
-            exit 1
-          fi
