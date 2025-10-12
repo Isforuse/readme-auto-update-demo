@@ -78,7 +78,7 @@ jobs:
       - name: Run integration tests
         run: |
           echo "🧪 Running integration tests..."
-          if grep -q "dummy output" ./artifact/dist/output.txt; then
+          if grep -q "dummy outputw" ./artifact/dist/output.txt; then
             echo "✅ Integration test passed."
           else
             echo "❌ Integration test failed."
