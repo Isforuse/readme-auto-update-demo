@@ -29,13 +29,13 @@ jobs:
           echo "🏗️ Building project for Node.js ${{ matrix.node }}..."
           mkdir -p dist
           echo "dummy output for Node.js ${{ matrix.node }}" > dist/output.txt
-          zip -r build-${{ matrix.node }}.zip dist/
+          zip -r build.zip dist/
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact-${{ matrix.node }}
-          path: build-${{ matrix.node }}.zip
+          path: build.zip
 
       # 語意化版本 (只在 Node 22)
       - name: Determine next semantic version
@@ -80,11 +80,11 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: build-artifact-22
-          path: dist
-  
+          path: .
+
       - name: Unzip build
-        run: unzip dist/build-22.zip -d dist
-  
+        run: unzip build.zip -d dist
+
       - name: Run unit tests
         run: |
           echo "🧪 Running unit tests in $TEST_ENV..."
@@ -94,7 +94,6 @@ jobs:
             echo "❌ Unit test failed."
             exit 1
           fi
-
 
   # === 3️⃣ Integration Test Job ===
   test-integration:
@@ -106,7 +105,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: build-artifact-22
-          path: dist
+          path: .
+
+      - name: Unzip build
+        run: unzip build.zip -d dist
 
       - name: Run integration tests
         run: |
@@ -127,7 +129,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: build-artifact-22
-          path: dist
+          path: .
+
+      - name: Unzip build
+        run: unzip build.zip -d dist
 
       - name: Release Staging Build
         env:
@@ -148,7 +153,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: build-artifact-22
-          path: dist
+          path: .
+
+      - name: Unzip build
+        run: unzip build.zip -d dist
 
       - name: Release Production Build
         id: release
