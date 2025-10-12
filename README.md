@@ -15,11 +15,11 @@
 
 ## Recent Commits
 <!--START_SECTION:commits-->
+- chore: update README with commits & PRs (8125ba5)
 - Update ci-deploy-assignment5.yml (851bcd3)
 - Update ci-deploy-assignment5.yml (4a44470)
 - Update ci-deploy-assignment5.yml (7f676b0)
 - Update ci-deploy-assignment5.yml (ac47a0e)
-- Update ci-deploy-assignment5.yml (1b2e9d2)
 <!--END_SECTION:commits-->
 
 ## Recent PRs
