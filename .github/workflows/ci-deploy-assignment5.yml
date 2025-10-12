@@ -1,4 +1,4 @@
-name: CI/CD Deployment Pipeline
+name: CI/CD Deployment Assignment5
 
 on:
   push:
@@ -72,25 +72,29 @@ jobs:
 
   # === 2️⃣ Unit Test Job ===
   test-unit:
-    runs-on: ubuntu-latest
-    needs: build
-    env:
-      TEST_ENV: unit
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-artifact-22
-          path: dist
+  runs-on: ubuntu-latest
+  needs: build
+  env:
+    TEST_ENV: unit
+  steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: build-artifact-22
+        path: dist
 
-      - name: Run unit tests
-        run: |
-          echo "🧪 Running unit tests in $TEST_ENV..."
-          if [ -f "dist/output.txt" ]; then
-            echo "✅ Unit test passed."
-          else
-            echo "❌ Unit test failed."
-            exit 1
-          fi
+    - name: Unzip build
+      run: unzip dist/build-22.zip -d dist
+
+    - name: Run unit tests
+      run: |
+        echo "🧪 Running unit tests in $TEST_ENV..."
+        if [ -f "dist/output.txt" ]; then
+          echo "✅ Unit test passed."
+        else
+          echo "❌ Unit test failed."
+          exit 1
+        fi
+
 
   # === 3️⃣ Integration Test Job ===
   test-integration:
