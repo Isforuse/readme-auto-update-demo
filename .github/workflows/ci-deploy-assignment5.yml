@@ -121,6 +121,11 @@ jobs:
     needs: test-integration
     environment: staging
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # ⚠️ 確保 git tag 操作可用
+
       - uses: actions/download-artifact@v4
         with:
           name: build-artifact-22
@@ -133,15 +138,23 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: staging-${{ needs.build.outputs.VERSION }}
         run: |
+          echo "🚀 Deploying to STAGING..."
           gh release delete "$TAG" -y || true
+          git tag -d "$TAG" || true
           gh release create "$TAG" ./artifact/dist/output.txt --notes "Staging release $TAG"
+
 
   # === 6️⃣ Deploy to Production ===
   deploy-production:
     runs-on: ubuntu-latest
     needs: deploy-staging
-    environment: production
+    environment: production   # ⚠️ 在 repo 設定 reviewer approval
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # ⚠️ 同樣需要完整 .git 歷史
+
       - uses: actions/download-artifact@v4
         with:
           name: build-artifact-22
@@ -155,6 +168,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: prod-${{ needs.deploy-staging.outputs.VERSION }}
         run: |
+          echo "🏁 Deploying to PRODUCTION..."
+          gh release delete "$TAG" -y || true
+          git tag -d "$TAG" || true
           if gh release create "$TAG" ./artifact/dist/output.txt --notes "Production release $TAG"; then
             echo "✅ Production release created"
           else
@@ -179,5 +195,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: prod-${{ needs.deploy-staging.outputs.VERSION }}
         run: |
+          echo "⚠️ Rollback triggered, cleaning up release $TAG..."
           gh release delete "$TAG" -y || true
           git tag -d "$TAG" || true
