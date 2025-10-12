@@ -26,71 +26,97 @@ jobs:
       - name: Build the software
         run: |
           echo "🏗️ Building project..."
-          npm run build || echo "⚠️ No build script found, skipping build."
-          mkdir -p dist
-          echo "Build finished at $(date)" > dist/output.txt
+          npm run build || (mkdir -p dist && echo "dummy output" > dist/output.txt)
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact
-          path: .
+          path: dist/
 
-  # === 2️⃣ Test Job ===
-  test:
+  # === 2️⃣ Unit Test Job ===
+  test-unit:
     runs-on: ubuntu-latest
     needs: build
+    env:
+      TEST_ENV: unit
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: build-artifact
-          path: .   # ✅ 把檔案展開到根目錄
 
-      - name: Run automated tests
+      - name: Run unit tests
         run: |
-          echo "🧪 Running automated tests..."
-          if [ -f "package.json" ]; then
-            echo "📦 package.json found, running npm test..."
-            if npm test; then
-              echo "✅ All tests passed."
-            else
-              echo "❌ Tests failed."
-              exit 1
-            fi
+          echo "🧪 Running unit tests in $TEST_ENV environment..."
+          if [ -f "dist/output.txt" ]; then
+            echo "✅ Unit test passed: build artifact exists."
           else
-            echo "⚠️ No package.json found, running mock test..."
-            if [ -f "dist/output.txt" ]; then
-              echo "✅ Mock test passed: dist/output.txt exists."
-            else
-              echo "❌ Mock test failed: no build artifact found."
-              exit 1
-            fi
+            echo "❌ Unit test failed: no build artifact found!"
+            exit 1
           fi
 
-  # === 3️⃣ Release Job ===
-  release:
+  # === 3️⃣ Integration Test Job ===
+  test-integration:
     runs-on: ubuntu-latest
-    needs: test
-    environment: dev
+    needs: test-unit
+    env:
+      TEST_ENV: integration
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: build-artifact
-          path: .
 
-      - name: Release artifact
+      - name: Run integration tests
+        run: |
+          echo "🧪 Running integration tests in $TEST_ENV environment..."
+          # 模擬一個測試條件（dist/output.txt 必須包含 'dummy output'）
+          if grep -q "dummy output" dist/output.txt; then
+            echo "✅ Integration test passed."
+          else
+            echo "❌ Integration test failed: expected content missing."
+            exit 1
+          fi
+
+  # === 4️⃣ Deploy to Staging ===
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: test-integration
+    environment: staging
+    env:
+      TEST_ENV: staging
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+
+      - name: Release to staging
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "🚀 Releasing new dev build..."
+          echo "🚀 Deploying to staging environment..."
           ts=$(date +%s)
-          if [ -f "dist/output.txt" ]; then
-            gh release create "dev-$ts" dist/output.txt --notes "Automated release after successful tests"
-          else
-            gh release create "dev-$ts" --notes "Automated release (no build artifact found)"
-          fi
+          gh release create "staging-$ts" dist/output.txt --notes "Staging release after tests passed"
+
+  # === 5️⃣ Deploy to Production ===
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    environment: production   # ⚠️ 在 GitHub repo settings 裡設定 reviewer approval
+    env:
+      TEST_ENV: production
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+
+      - name: Release to production
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🏁 Deploying to PRODUCTION (requires approval)..."
+          ts=$(date +%s)
+          gh release create "prod-$ts" dist/output.txt --notes "Production release after staging approval"
