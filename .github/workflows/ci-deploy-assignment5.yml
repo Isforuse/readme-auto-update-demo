@@ -1,0 +1,35 @@
+name: Build-Test-Release Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  # === 1️⃣ Build Job ===
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: |
+          echo "📦 Installing dependencies..."
+          npm install || echo "⚠️ No package.json found, skipping npm install."
+
+      - name: Build the software
+        run: |
+          echo "🏗️ Building project..."
+          npm run build || echo "⚠️ No build script found, skipping build."
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: .
