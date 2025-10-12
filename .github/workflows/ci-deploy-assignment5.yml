@@ -151,7 +151,7 @@ jobs:
           VERSION: ${{ needs.build.outputs.VERSION }}
         run: |
           TAG="staging-${VERSION:-v0.0.${GITHUB_RUN_NUMBER}}"
-          if gh release create "$TAG" ./artifact/dist/outputw.txt --notes "Staging release $TAG"; then
+          if gh release create "$TAG" ./artifact/dist/output.txt --notes "Staging release $TAG"; then
             echo "✅ Staging release created"
           else
             echo "❌ Staging release failed" && exit 1
@@ -184,7 +184,7 @@ jobs:
           VERSION: ${{ needs.build.outputs.VERSION }}
         run: |
           TAG="prod-${VERSION:-v0.0.${GITHUB_RUN_NUMBER}}"
-          if gh release create "$TAG" ./artifact/dist/output.txt --notes "Production release $TAG"; then
+          if gh release create "$TAG" ./artifact/dist/outpuwt.txt --notes "Production release $TAG"; then
             echo "✅ Production release created"
           else
             echo "❌ Production release failed" && exit 1
