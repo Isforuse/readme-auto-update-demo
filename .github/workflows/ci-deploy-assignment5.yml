@@ -89,42 +89,55 @@ jobs:
     needs: test-integration
     environment: staging
     steps:
+      # ✅ 加上 checkout，避免 gh 找不到 repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           name: build-artifact
           path: ./artifact
 
+      - name: Unzip artifact
+        run: unzip ./artifact/build-22.zip -d ./artifact
+
       - name: Release Staging Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: staging-${{ needs.build.outputs.VERSION }}
         run: |
           echo "🚀 Deploying to STAGING..."
-          ts=$(date +%s)
-          gh release delete "staging-$ts" -y || true
-          git tag -d "staging-$ts" || true
-          gh release create "staging-$ts" ./artifact/dist/output.txt --notes "Staging release $ts"
+          gh release delete "$TAG" -y || true
+          git tag -d "$TAG" || true
+          gh release create "$TAG" ./artifact/dist/output.txt --notes "Staging release ${TAG}"
 
   # === 5️⃣ Deploy to Production ===
   deploy-production:
     runs-on: ubuntu-latest
     needs: deploy-staging
-    environment: production   # ⚠️ repo 裡要設定 reviewer approval
+    environment: production   # ⚠️ 在 repo 設定 reviewer approval
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           name: build-artifact
           path: ./artifact
 
+      - name: Unzip artifact
+        run: unzip ./artifact/build-22.zip -d ./artifact
+
       - name: Release Production Build
         id: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: prod-${{ needs.deploy-staging.outputs.VERSION }}
         run: |
           echo "🏁 Deploying to PRODUCTION..."
-          ts=$(date +%s)
-          gh release delete "prod-$ts" -y || true
-          git tag -d "prod-$ts" || true
-          if gh release create "prod-$ts" ./artifact/dist/output.txt --notes "Production release $ts"; then
+          gh release delete "$TAG" -y || true
+          git tag -d "$TAG" || true
+          if gh release create "$TAG" ./artifact/dist/output.txt --notes "Production release ${TAG}"; then
             echo "✅ Production release created."
           else
             echo "❌ Release failed, rollback triggered."
@@ -135,19 +148,21 @@ jobs:
         if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: prod-${{ needs.deploy-staging.outputs.VERSION }}
         run: |
           issue_number=$(gh issue list --search "Production Deployment Notifications in:title" --json number --jq '.[0].number')
           if [ -z "$issue_number" ]; then
             issue_url=$(gh issue create --title "Production Deployment Notifications" --body "Tracking all production releases.")
             issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
           fi
-          gh issue comment $issue_number --body "✅ Production release deployed at $(date)."
+          gh issue comment $issue_number --body "✅ Production release (${TAG}) deployed at $(date)."
 
       - name: Rollback on failure
         if: failure()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: prod-${{ needs.deploy-staging.outputs.VERSION }}
         run: |
-          echo "⚠️ Rollback: removing release"
-          gh release delete "prod-$ts" -y || true
-          git tag -d "prod-$ts" || true
+          echo "⚠️ Rollback: removing release $TAG"
+          gh release delete "$TAG" -y || true
+          git tag -d "$TAG" || true
