@@ -100,9 +100,9 @@ jobs:
             echo "❌ Build artifact missing!" && exit 1
           fi
 
-      # 跑 Jest 測試並產生 coverage (包含 json-summary 方便檢查)
+      # 跑 Jest 測試並產生 coverage
       - name: Run unit tests with coverage
-        run: npm test -- --coverage --coverageReporters=json-summary
+        run: npm test -- --coverage --coverageReporters=json-summary --coverageReporters=lcov
 
       # 檢查 coverage 是否達到 80%
       - name: Check coverage threshold (80%)
@@ -124,12 +124,12 @@ jobs:
           path: coverage/
           if-no-files-found: ignore
 
-      # 上傳到 Codecov
+      # 🔑 上傳到 Codecov（重點修改）
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: ./coverage
+          token: ${{ secrets.CODECOV_TOKEN }} # 需要在 GitHub Repo Secrets 設定
+          file: ./coverage/lcov.info
           flags: unittests
           fail_ci_if_error: true
 
@@ -142,6 +142,7 @@ jobs:
           gh issue create --repo "$GITHUB_REPOSITORY" \
             --title "❌ Unit Test / Coverage Failed" \
             --body "Unit test or coverage check failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
+
 
 
   # === 3️⃣ Integration Test Job ===
