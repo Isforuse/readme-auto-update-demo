@@ -212,15 +212,24 @@ jobs:
         run: |
           echo "🔍 Checking for existing Test Failure Notifications issue..."
 
-          issue_number=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/$REPO/issues?state=open" | \
-            jq '.[] | select(.title=="Test Failure Notifications") | .number' | head -n 1)
+          # 查詢 Issue
+          response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$REPO/issues?state=open")
+
+          echo "API response for list issues:"
+          echo "$response"
+
+          issue_number=$(echo "$response" | jq '.[] | select(.title=="Test Failure Notifications") | .number' | head -n 1)
 
           if [ -z "$issue_number" ]; then
             echo "⚠️ No existing issue found, creating a new one..."
             response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
               -d '{"title":"Test Failure Notifications","body":"This issue will be used to track all test failures across runs."}' \
               "https://api.github.com/repos/$REPO/issues")
+
+            echo "API response for create issue:"
+            echo "$response"
+
             issue_number=$(echo $response | jq '.number')
             echo "✅ Created new issue #$issue_number"
           else
@@ -228,12 +237,14 @@ jobs:
           fi
 
           echo "💬 Adding comment to issue #$issue_number..."
-          curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             -d "{\"body\":\"❌ Unit Test failed in workflow run #${{ github.run_number }}  
             **Commit:** ${{ github.sha }}  
             **Logs:** [View run logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}" \
-            "https://api.github.com/repos/$REPO/issues/$issue_number/comments"
+            "https://api.github.com/repos/$REPO/issues/$issue_number/comments")
 
+          echo "API response for add comment:"
+          echo "$response"
 
             
 
