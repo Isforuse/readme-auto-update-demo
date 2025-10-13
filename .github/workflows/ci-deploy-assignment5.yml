@@ -81,6 +81,13 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
       - uses: actions/download-artifact@v4
         with:
           name: build-artifact-22
@@ -88,22 +95,12 @@ jobs:
 
       - run: unzip ./artifact/build-22.zip -d ./artifact
 
-      - name: Run unit tests (mock)
-        run: |
-          if [ -f "./artifact/dist/output.txt" ]; then
-            echo "✅ Unit test passed"
-          else
-            echo "❌ Unit test failed" && exit 1
-          fi
-
-      - name: Generate coverage report (mock 75%)
-        run: |
-          echo "lines: 75%" > coverage.txt
-          cat coverage.txt
+      - name: Run unit tests with coverage
+        run: npm test -- --coverage
 
       - name: Check coverage threshold (80%)
         run: |
-          coverage=$(grep "lines:" coverage.txt | grep -oE '[0-9]+')
+          coverage=$(jq '.total.lines.pct' coverage/coverage-summary.json | cut -d'.' -f1)
           echo "📊 Coverage = ${coverage}%"
           if [ "$coverage" -lt 80 ]; then
             echo "❌ Coverage below threshold (80%)"
@@ -117,7 +114,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: coverage.txt
+          path: coverage/
 
       - name: Create issue on failure
         if: failure()
@@ -128,6 +125,7 @@ jobs:
           gh issue create --repo "$GITHUB_REPOSITORY" \
             --title "❌ Unit Test / Coverage Failed" \
             --body "Unit test or coverage check failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
+
 
   # === 3️⃣ Integration Test Job ===
   test-integration:
