@@ -198,6 +198,31 @@ jobs:
         with:
           name: badge-test
           path: badges/test.json
+          
+      # === 📝 Notify Test Results in GitHub Issue ===
+      - name: Notify test results in GitHub Issue
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 檢查是否已經有專門的 Issue
+          issue_number=$(gh issue list \
+            --search "Test Failure Notifications in:title" \
+            --json number --jq '.[0].number')
+
+          if [ -z "$issue_number" ]; then
+            echo "⚠️ No existing issue found, creating a new one..."
+            issue_url=$(gh issue create \
+              --title "Test Failure Notifications" \
+              --body "This issue will be used to track all test failures.")
+            issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
+          fi
+
+          # 在 Issue 裡留言測試失敗的通知
+          gh issue comment $issue_number \
+            --body "❌ Unit Test failed in workflow run #${{ github.run_number }}  
+            Commit: ${{ github.sha }}  
+            Logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
 
 
