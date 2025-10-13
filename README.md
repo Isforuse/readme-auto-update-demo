@@ -10,10 +10,12 @@
 
 ## CI/CD Status
 
-- Build Status: ![Build](https://img.shields.io/github/actions/workflow/status/Isforuse/readme-auto-update-demo/ci-deploy-assignment5.yml?branch=main&label=Build)
-- Test Status: ![Test](https://img.shields.io/github/actions/workflow/status/Isforuse/readme-auto-update-demo/ci-deploy-assignment5.yml?branch=main&label=Test)
-- Staging Release: ![Staging](https://img.shields.io/github/actions/workflow/status/Isforuse/readme-auto-update-demo/ci-deploy-assignment5.yml?branch=main&label=Staging)
-- Production Release: ![Production](https://img.shields.io/github/actions/workflow/status/Isforuse/readme-auto-update-demo/ci-deploy-assignment5.yml?branch=main&label=Production)
+- Build Status: ![Build](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Isforuse/readme-auto-update-demo/gh-pages/build.json)
+- Test Status: ![Test](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Isforuse/readme-auto-update-demo/gh-pages/test.json)
+- Integration Test: ![Integration](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Isforuse/readme-auto-update-demo/gh-pages/integration.json)
+- Staging Release: ![Staging](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Isforuse/readme-auto-update-demo/gh-pages/staging.json)
+- Production Release: ![Production](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Isforuse/readme-auto-update-demo/gh-pages/production.json)
+
 
 
 
