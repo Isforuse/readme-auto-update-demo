@@ -72,7 +72,7 @@ jobs:
           next="v$major.$minor.$patch"
           echo "VERSION=$next" >> $GITHUB_OUTPUT
 
-  # === 2️⃣ Unit Test Job (real Jest coverage) ===
+  # === 2️⃣ Unit Test Job (real coverage with Jest + Codecov) ===
   test-unit:
     runs-on: ubuntu-latest
     needs: build
@@ -100,7 +100,7 @@ jobs:
             echo "❌ Build artifact missing!" && exit 1
           fi
 
-      # 跑 Jest 測試並產生 coverage
+      # 跑 Jest 測試並產生 coverage (包含 json-summary 方便檢查)
       - name: Run unit tests with coverage
         run: npm test -- --coverage --coverageReporters=json-summary
 
@@ -116,13 +116,22 @@ jobs:
             echo "✅ Coverage OK"
           fi
 
-      - name: Upload coverage report
+      - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/
           if-no-files-found: ignore
+
+      # 上傳到 Codecov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # 在 repo 設定好 secret
+          files: ./coverage/coverage-final.json
+          flags: unittests
+          fail_ci_if_error: true
 
       - name: Create issue on failure
         if: failure()
@@ -133,14 +142,7 @@ jobs:
           gh issue create --repo "$GITHUB_REPOSITORY" \
             --title "❌ Unit Test / Coverage Failed" \
             --body "Unit test or coverage check failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/coverage-final.json
-          flags: unittests
-          name: codecov-coverage
-          fail_ci_if_error: true
+
 
   # === 3️⃣ Integration Test Job ===
   test-integration:
