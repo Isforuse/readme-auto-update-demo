@@ -34,12 +34,11 @@ jobs:
           echo "🏗️ Building project for Node.js ${{ matrix.node }}..."
           mkdir -p dist
           echo "dummy output for Node.js ${{ matrix.node }}" > dist/output.txt
-          zip -r build-${{ matrix.node }}.zip dist/
 
       - uses: actions/upload-artifact@v4
         with:
           name: build-artifact-${{ matrix.node }}
-          path: build-${{ matrix.node }}.zip
+          path: dist/
 
       - name: Determine next semantic version
         if: matrix.node == '22'
@@ -93,7 +92,13 @@ jobs:
           name: build-artifact-22
           path: ./artifact
 
-      - run: unzip ./artifact/build-22.zip -d ./artifact
+      - name: Verify build artifact
+        run: |
+          if [ -f "./artifact/output.txt" ]; then
+            echo "✅ Build artifact found"
+          else
+            echo "❌ Build artifact missing!" && exit 1
+          fi
 
       - name: Run unit tests with coverage
         run: npm test -- --coverage
@@ -126,7 +131,6 @@ jobs:
             --title "❌ Unit Test / Coverage Failed" \
             --body "Unit test or coverage check failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
 
-
   # === 3️⃣ Integration Test Job ===
   test-integration:
     runs-on: ubuntu-latest
@@ -140,11 +144,9 @@ jobs:
           name: build-artifact-22
           path: ./artifact
 
-      - run: unzip ./artifact/build-22.zip -d ./artifact
-
       - name: Run integration tests
         run: |
-          if grep -q "dummy output" ./artifact/dist/output.txt; then
+          if grep -q "dummy output" ./artifact/output.txt; then
             echo "✅ Integration test passed"
           else
             echo "❌ Integration test failed" && exit 1
@@ -170,7 +172,6 @@ jobs:
         with:
           name: build-artifact-22
           path: ./artifact
-      - run: unzip ./artifact/build-22.zip -d ./artifact
 
       - name: Release Staging Build
         env:
@@ -178,7 +179,7 @@ jobs:
           VERSION: ${{ needs.build.outputs.VERSION }}
         run: |
           TAG="staging-${VERSION:-v0.0.${GITHUB_RUN_NUMBER}}"
-          if gh release create "$TAG" ./artifact/dist/output.txt --notes "Staging release $TAG"; then
+          if gh release create "$TAG" ./artifact/output.txt --notes "Staging release $TAG"; then
             echo "✅ Staging release created"
           else
             echo "❌ Staging release failed" && exit 1
@@ -202,7 +203,6 @@ jobs:
         with:
           name: build-artifact-22
           path: ./artifact
-      - run: unzip ./artifact/build-22.zip -d ./artifact
 
       - name: Release Production Build
         env:
@@ -210,7 +210,7 @@ jobs:
           VERSION: ${{ needs.build.outputs.VERSION }}
         run: |
           TAG="prod-${VERSION:-v0.0.${GITHUB_RUN_NUMBER}}"
-          if gh release create "$TAG" ./artifact/dist/output.txt --notes "Production release $TAG"; then
+          if gh release create "$TAG" ./artifact/output.txt --notes "Production release $TAG"; then
             echo "✅ Production release created"
           else
             echo "❌ Production release failed" && exit 1
