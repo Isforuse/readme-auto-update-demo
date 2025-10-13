@@ -1,5 +1,9 @@
 name: CI/CD Deployment Assignment5
 
+permissions:
+  contents: write
+  issues: write
+
 on:
   push:
     branches: [ main ]
@@ -203,8 +207,13 @@ jobs:
       - name: Notify test results in GitHub Issue
         if: failure()
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "🔑 Authenticating gh CLI..."
+          echo "$GITHUB_TOKEN" | gh auth login --with-token
+          gh auth status
+
           echo "🔍 Checking for existing Test Failure Notifications issue..."
           issue_number=$(gh issue list \
             --search "Test Failure Notifications in:title" \
@@ -214,7 +223,7 @@ jobs:
             echo "⚠️ No existing issue found, creating a new one..."
             issue_url=$(gh issue create \
               --title "Test Failure Notifications" \
-              --body "This issue will be used to track all test failures.")
+              --body "This issue will be used to track all test failures across runs.")
             echo "Issue created: $issue_url"
             issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
           else
@@ -224,8 +233,9 @@ jobs:
           echo "💬 Adding comment to issue #$issue_number..."
           gh issue comment $issue_number \
             --body "❌ Unit Test failed in workflow run #${{ github.run_number }}  
-            Commit: ${{ github.sha }}  
-            Logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            **Commit:** ${{ github.sha }}  
+            **Logs:** [View run logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+
             
 
   # === 3️⃣ Integration Test Job ===
