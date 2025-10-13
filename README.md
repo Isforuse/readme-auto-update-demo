@@ -9,9 +9,8 @@
 <!--END_SECTION:badges-->
 
 ## CI/CD Status
-![Build](https://github.com/USERNAME/REPO/actions/workflows/ci.yml/badge.svg?branch=main)
-![Tests](https://github.com/USERNAME/REPO/actions/workflows/test.yml/badge.svg?branch=main)
-![Release](https://github.com/USERNAME/REPO/actions/workflows/release.yml/badge.svg?branch=main)
+![CI/CD Pipeline](https://github.com/USERNAME/REPO/actions/workflows/ci-delopy-assignment5-file.yml/badge.svg?branch=main)
+
 
 ## Test Coverage
 [![codecov](https://codecov.io/github/Isforuse/readme-auto-update-demo/graph/badge.svg?token=RWDRPSSEMU)](https://codecov.io/github/Isforuse/readme-auto-update-demo)
