@@ -31,11 +31,11 @@
 
 ## Recent Commits
 <!--START_SECTION:commits-->
-- Update README.md (d55d40f)
-- Update README.md (2d638cb)
-- Update README.md (dfa94e6)
-- Update ci-deploy-assignment5.yml (b0951af)
-- Update sum.js (e557182)
+- Update package.json (2d8e165)
+- Update ci-deploy-assignment5.yml (ebf028e)
+- Update package.json (91c5277)
+- Update ci-deploy-assignment5.yml (7630de7)
+- Update package.json (21f4572)
 <!--END_SECTION:commits-->
 
 ## Recent PRs
