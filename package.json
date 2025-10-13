@@ -4,7 +4,7 @@
   "description": "Demo project for CI/CD Assignment with Jest and coverage",
   "main": "test.js",
   "scripts": {
-    "test": "jest --coverage"
+    "test": "jest --coverage --reporters=default --reporters=jest-junit"
   },
   "devDependencies": {
     "jest": "^29.7.0",
