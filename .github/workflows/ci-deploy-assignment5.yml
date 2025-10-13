@@ -126,6 +126,7 @@ jobs:
 
       # 🔑 上傳到 Codecov（重點修改）
       - name: Upload coverage to Codecov
+        if: always()
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # 需要在 GitHub Repo Secrets 設定
