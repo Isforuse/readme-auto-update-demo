@@ -205,29 +205,29 @@ jobs:
           
       # === 📝 Notify Test Results in GitHub Issue ===
       - name: Notify test results in GitHub Issue
-  if: failure()
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  run: |
-    echo "🔍 Checking if 'Test Failure Notifications' issue exists..."
-    issue_number=$(gh issue list --state open --search "Test Failure Notifications in:title" --json number --jq '.[0].number')
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Checking for existing Test Failure Notifications issue..."
+          issue_number=$(gh issue list --state open --search "Test Failure Notifications in:title" --json number --jq '.[0].number')
 
-    if [ -z "$issue_number" ]; then
-      echo "⚠️ No existing issue found, creating a new one..."
-      issue_url=$(gh issue create \
-        --title "Test Failure Notifications" \
-        --body "This issue will be used to track all test failures across runs.")
-      echo "✅ Created issue: $issue_url"
-      issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
-    else
-      echo "✅ Found existing issue #$issue_number"
-    fi
+          if [ -z "$issue_number" ]; then
+            echo "⚠️ No existing issue found, creating a new one..."
+            issue_url=$(gh issue create \
+              --title "Test Failure Notifications" \
+              --body "This issue will be used to track all test failures across runs.")
+            issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
+            echo "✅ Created new issue: #$issue_number"
+          else
+            echo "✅ Found existing issue: #$issue_number"
+          fi
 
-    echo "💬 Adding comment to issue #$issue_number..."
-    gh issue comment $issue_number \
-      --body "❌ Unit Test failed in workflow run #${{ github.run_number }}  
-      **Commit:** ${{ github.sha }}  
-      **Logs:** [View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          echo "💬 Adding comment to issue #$issue_number..."
+          gh issue comment $issue_number \
+            --body "❌ Unit Test failed in workflow run #${{ github.run_number }}  
+            **Commit:** ${{ github.sha }}  
+            **Logs:** [View run logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
 
   # === 3️⃣ Integration Test Job ===
