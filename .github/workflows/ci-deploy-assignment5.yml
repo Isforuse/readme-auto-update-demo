@@ -205,48 +205,30 @@ jobs:
           
       # === 📝 Notify Test Results in GitHub Issue ===
       - name: Notify test results in GitHub Issue
-        if: failure()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-        run: |
-          echo "🔍 Checking for existing Test Failure Notifications issue..."
+  if: failure()
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  run: |
+    echo "🔍 Checking if 'Test Failure Notifications' issue exists..."
+    issue_number=$(gh issue list --state open --search "Test Failure Notifications in:title" --json number --jq '.[0].number')
 
-          # 查詢 Issue
-          response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/$REPO/issues?state=open")
+    if [ -z "$issue_number" ]; then
+      echo "⚠️ No existing issue found, creating a new one..."
+      issue_url=$(gh issue create \
+        --title "Test Failure Notifications" \
+        --body "This issue will be used to track all test failures across runs.")
+      echo "✅ Created issue: $issue_url"
+      issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
+    else
+      echo "✅ Found existing issue #$issue_number"
+    fi
 
-          echo "API response for list issues:"
-          echo "$response"
+    echo "💬 Adding comment to issue #$issue_number..."
+    gh issue comment $issue_number \
+      --body "❌ Unit Test failed in workflow run #${{ github.run_number }}  
+      **Commit:** ${{ github.sha }}  
+      **Logs:** [View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
-          issue_number=$(echo "$response" | jq '.[] | select(.title=="Test Failure Notifications") | .number' | head -n 1)
-
-          if [ -z "$issue_number" ]; then
-            echo "⚠️ No existing issue found, creating a new one..."
-            response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-              -d '{"title":"Test Failure Notifications","body":"This issue will be used to track all test failures across runs."}' \
-              "https://api.github.com/repos/$REPO/issues")
-
-            echo "API response for create issue:"
-            echo "$response"
-
-            issue_number=$(echo $response | jq '.number')
-            echo "✅ Created new issue #$issue_number"
-          else
-            echo "✅ Found existing issue: #$issue_number"
-          fi
-
-          echo "💬 Adding comment to issue #$issue_number..."
-          response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            -d "{\"body\":\"❌ Unit Test failed in workflow run #${{ github.run_number }}  
-            **Commit:** ${{ github.sha }}  
-            **Logs:** [View run logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}" \
-            "https://api.github.com/repos/$REPO/issues/$issue_number/comments")
-
-          echo "API response for add comment:"
-          echo "$response"
-
-            
 
   # === 3️⃣ Integration Test Job ===
   test-integration:
