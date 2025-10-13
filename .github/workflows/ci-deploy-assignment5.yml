@@ -118,21 +118,25 @@ jobs:
             echo "❌ Build artifact missing!" && exit 1
           fi
 
-      # 🔹 跑 Jest 測試並輸出 JUnit
-      - name: Run unit tests with JUnit report
-        run: npm test -- --reporters=default --reporters=jest-junit
+      # 🔹 Run Jest tests (JUnit + Coverage in one go)
+      - name: Run unit tests (JUnit + Coverage)
+        run: |
+          npx jest \
+            --coverage \
+            --coverageReporters=json-summary \
+            --coverageReporters=lcov \
+            --reporters=default \
+            --reporters=jest-junit
 
-      # 🔹 上傳 JUnit XML 給 GitHub Artifact
+      # 🔹 Upload JUnit XML
       - name: Upload JUnit report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: junit-report
-          path: junit.xml
-          
-      - name: Run unit tests with coverage
-        run: npm test -- --coverage --coverageReporters=json-summary --coverageReporters=lcov
+          path: reports/junit/junit.xml
 
+      # 🔹 Check coverage threshold
       - name: Check coverage threshold (80%)
         run: |
           coverage=$(jq '.total.lines.pct' coverage/coverage-summary.json | cut -d'.' -f1)
@@ -144,6 +148,7 @@ jobs:
             echo "✅ Coverage OK"
           fi
 
+      # 🔹 Upload Coverage folder
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -152,6 +157,7 @@ jobs:
           path: coverage/
           if-no-files-found: ignore
 
+      # 🔹 Upload Coverage to Codecov
       - name: Upload coverage to Codecov
         if: always()
         uses: codecov/codecov-action@v4
@@ -161,6 +167,7 @@ jobs:
           flags: unittests
           fail_ci_if_error: true
 
+      # 🔹 Export job status badge
       - name: Export job status
         if: always()
         run: |
@@ -172,6 +179,7 @@ jobs:
           fi
         shell: bash
 
+      # 🔹 Upload Test Badge JSON
       - name: Upload badge JSON
         if: always()
         uses: actions/upload-artifact@v4
