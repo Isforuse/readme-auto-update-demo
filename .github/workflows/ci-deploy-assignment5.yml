@@ -128,6 +128,11 @@ jobs:
             --reporters=default \
             --reporters=jest-junit
 
+      # 🔹 Debug: List reports folder (確認是否有生成 junit.xml)
+      - name: List reports folder
+        if: always()
+        run: ls -R reports || echo "⚠️ No reports folder found"
+
       # 🔹 Upload JUnit XML
       - name: Upload JUnit report
         if: always()
@@ -135,6 +140,7 @@ jobs:
         with:
           name: junit-report
           path: reports/junit/junit.xml
+          if-no-files-found: warn
 
       # 🔹 Check coverage threshold
       - name: Check coverage threshold (80%)
@@ -186,6 +192,7 @@ jobs:
         with:
           name: badge-test
           path: badges/test.json
+
 
 
   # === 3️⃣ Integration Test Job ===
