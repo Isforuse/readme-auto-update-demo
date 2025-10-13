@@ -9,7 +9,7 @@
 <!--END_SECTION:badges-->
 
 ## CI/CD Status
-![CI/CD Pipeline](https://github.com/USERNAME/REPO/actions/workflows/ci-delopy-assignment5-file.yml/badge.svg?branch=main)
+![CI/CD Pipeline](https://github.com/USERNAME/REPO/actions/workflows/ci-deploy-assignment5.yml/badge.svg?branch=main)
 
 
 ## Test Coverage
