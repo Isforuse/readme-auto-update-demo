@@ -73,7 +73,7 @@ jobs:
           echo "VERSION=$next" >> $GITHUB_OUTPUT
 
       - name: Export job status
-        if: always()
+        if: always() && matrix.node == '22'
         run: |
           mkdir -p badges
           if [ "${{ job.status }}" == "success" ]; then
@@ -84,11 +84,12 @@ jobs:
         shell: bash
 
       - name: Upload badge JSON
-        if: always()
+        if: always() && matrix.node == '22'
         uses: actions/upload-artifact@v4
         with:
           name: badge-build
           path: badges/build.json
+
 
 
   # === 2️⃣ Unit Test Job ===
