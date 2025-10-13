@@ -1,9 +1,22 @@
 {
   "name": "demo-project",
   "version": "1.0.0",
-  "description": "A minimal project for CI/CD testing",
+  "description": "Demo project for CI/CD Assignment with Jest and coverage",
+  "main": "test.js",
   "scripts": {
-  "test": "node test.js",
-  "build": "echo '🏗️ Building project...' && mkdir -p dist && echo 'build output' > dist/output.txt"
-}
+    "test": "jest --coverage"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "**/*.js",
+      "!**/node_modules/**",
+      "!**/coverage/**"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["json", "text", "lcov"]
+  }
 }
