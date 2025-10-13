@@ -118,6 +118,18 @@ jobs:
             echo "❌ Build artifact missing!" && exit 1
           fi
 
+      # 🔹 跑 Jest 測試並輸出 JUnit
+      - name: Run unit tests with JUnit report
+        run: npm test -- --reporters=default --reporters=jest-junit
+
+      # 🔹 上傳 JUnit XML 給 GitHub Artifact
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-report
+          path: junit.xml
+          
       - name: Run unit tests with coverage
         run: npm test -- --coverage --coverageReporters=json-summary --coverageReporters=lcov
 
