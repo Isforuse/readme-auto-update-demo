@@ -133,6 +133,14 @@ jobs:
           gh issue create --repo "$GITHUB_REPOSITORY" \
             --title "❌ Unit Test / Coverage Failed" \
             --body "Unit test or coverage check failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/coverage-final.json
+          flags: unittests
+          name: codecov-coverage
+          fail_ci_if_error: true
 
   # === 3️⃣ Integration Test Job ===
   test-integration:
