@@ -75,86 +75,97 @@ jobs:
           next="v$major.$minor.$patch"
           echo "VERSION=$next" >> $GITHUB_OUTPUT
 
-  # === 2️⃣ Unit Test Job ===
-  test-unit:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-artifact-22
-          path: ./artifact
+# === 2️⃣ Unit Test Job (含 Coverage 與門檻檢查) ===
+test-unit:
+  runs-on: ubuntu-latest
+  needs: build
+  steps:
+    - name: Checkout repo (for gh issue create context)
+      uses: actions/checkout@v4
 
-      - run: unzip ./artifact/build-22.zip -d ./artifact
+    - uses: actions/download-artifact@v4
+      with:
+        name: build-artifact-22
+        path: ./artifact
 
-      - name: Run unit tests
-        run: |
-          if [ -f "./artifact/dist/output.txt" ]; then
-            echo "✅ Unit test passed"
-          else
-            echo "❌ Unit test failed" && exit 1
-          fi
+    - run: unzip ./artifact/build-22.zip -d ./artifact
 
-      # 模擬 coverage 報告
-      - name: Generate fake coverage report
-        run: |
-          echo "lines: 75%" > coverage.txt
-          cat coverage.txt
+    - name: Run unit tests (mock)
+      run: |
+        if [ -f "./artifact/dist/output.txt" ]; then
+          echo "✅ Unit test passed"
+        else
+          echo "❌ Unit test failed" && exit 1
+        fi
 
-      # Coverage 門檻檢查 (設定 80%)
-      - name: Check coverage threshold
-        run: |
-          coverage=$(grep "lines:" coverage.txt | grep -oE '[0-9]+')
-          echo "📊 Coverage = $coverage%"
-          if [ "$coverage" -lt 80 ]; then
-            echo "❌ Coverage below threshold (80%)"
-            exit 1
-          else
-            echo "✅ Coverage OK"
-          fi
+    # 這裡若你已接上 Jest 可改成產生 coverage/ 內容；下列先用 coverage.txt 模擬
+    - name: Generate coverage report (mock 75%)
+      run: |
+        echo "lines: 75%" > coverage.txt
+        cat coverage.txt
 
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage.txt
+    - name: Check coverage threshold (80%)
+      run: |
+        coverage=$(grep "lines:" coverage.txt | grep -oE '[0-9]+')
+        echo "📊 Coverage = ${coverage}%"
+        if [ "$coverage" -lt 80 ]; then
+          echo "❌ Coverage below threshold (80%)"
+          exit 1
+        else
+          echo "✅ Coverage OK"
+        fi
 
-      - name: Create issue on failure
-        if: failure()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh issue create --title "❌ Unit Test / Coverage Failed" \
-            --body "Unit test or coverage check failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
+    - name: Upload coverage report
+      if: always()                # 就算前一步失敗仍上傳
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage.txt
+
+    - name: Create issue on failure
+      if: failure()               # 只有前面失敗時才建立 Issue
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}     # gh 使用的 token
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 保險起見也帶上
+      run: |
+        gh issue create --repo "$GITHUB_REPOSITORY" \
+          --title "❌ Unit Test / Coverage Failed" \
+          --body "Unit test or coverage check failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
 
 
-  # === 3️⃣ Integration Test Job ===
-  test-integration:
-    runs-on: ubuntu-latest
-    needs: test-unit
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-artifact-22
-          path: ./artifact
+# === 3️⃣ Integration Test Job ===
+test-integration:
+  runs-on: ubuntu-latest
+  needs: test-unit
+  steps:
+    - name: Checkout repo (for gh issue create context)
+      uses: actions/checkout@v4
 
-      - run: unzip ./artifact/build-22.zip -d ./artifact
+    - uses: actions/download-artifact@v4
+      with:
+        name: build-artifact-22
+        path: ./artifact
 
-      - name: Run integration tests
-        run: |
-          if grep -q "dummy output" ./artifact/dist/output.txt; then
-            echo "✅ Integration test passed"
-          else
-            echo "❌ Integration test failed" && exit 1
-          fi
+    - run: unzip ./artifact/build-22.zip -d ./artifact
 
-      - name: Create issue on failure
-        if: failure()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh issue create --title "❌ Integration Test Failed" \
-            --body "Integration test failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
+    - name: Run integration tests
+      run: |
+        if grep -q "dummy output" ./artifact/dist/output.txt; then
+          echo "✅ Integration test passed"
+        else
+          echo "❌ Integration test failed" && exit 1
+        fi
+
+    - name: Create issue on failure
+      if: failure()
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh issue create --repo "$GITHUB_REPOSITORY" \
+          --title "❌ Integration Test Failed" \
+          --body "Integration test failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
+
 
   # === 4️⃣ Deploy to Staging ===
   deploy-staging:
