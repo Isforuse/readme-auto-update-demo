@@ -10,10 +10,11 @@
 
 ## CI/CD Status
 
-- Build Status: ![Build](https://img.shields.io/github/actions/workflow/status/Isforuse/REPO/ci-deploy-assignment5.yml?branch=main&label=Build&job=build)
-- Test Status: ![Test](https://img.shields.io/github/actions/workflow/status/Isforuse/REPO/ci-deploy-assignment5.yml?branch=main&label=Test&job=test-unit)
-- Staging Release: ![Staging](https://img.shields.io/github/actions/workflow/status/Isforuse/REPO/ci-deploy-assignment5.yml?branch=main&label=Staging&job=deploy-staging)
-- Production Release: ![Production](https://img.shields.io/github/actions/workflow/status/Isforuse/REPO/ci-deploy-assignment5.yml?branch=main&label=Production&job=deploy-production)
+- Build Status: ![Build](https://img.shields.io/github/actions/workflow/status/Isforuse/readme-auto-update-demo/assignment5.yml?branch=main&label=Build)
+- Test Status: ![Test](https://img.shields.io/github/actions/workflow/status/Isforuse/readme-auto-update-demo/assignment5.yml?branch=main&label=Test)
+- Staging Release: ![Staging](https://img.shields.io/github/actions/workflow/status/Isforuse/readme-auto-update-demo/assignment5.yml?branch=main&label=Staging)
+- Production Release: ![Production](https://img.shields.io/github/actions/workflow/status/Isforuse/readme-auto-update-demo/assignment5.yml?branch=main&label=Production)
+
 
 
 
