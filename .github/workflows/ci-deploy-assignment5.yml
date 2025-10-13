@@ -103,7 +103,9 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install
+          npm install --save-dev jest-junit
 
       - uses: actions/download-artifact@v4
         with:
@@ -121,12 +123,16 @@ jobs:
       # 🔹 Run Jest tests (JUnit + Coverage in one go)
       - name: Run unit tests (JUnit + Coverage)
         run: |
+          mkdir -p reports/junit
           npx jest \
             --coverage \
             --coverageReporters=json-summary \
             --coverageReporters=lcov \
             --reporters=default \
             --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: reports/junit
+          JEST_JUNIT_OUTPUT_NAME: junit.xml
 
       # 🔹 Debug: List reports folder (確認是否有生成 junit.xml)
       - name: List reports folder
@@ -192,6 +198,7 @@ jobs:
         with:
           name: badge-test
           path: badges/test.json
+
 
 
 
