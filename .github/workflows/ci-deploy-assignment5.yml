@@ -207,34 +207,33 @@ jobs:
       - name: Notify test results in GitHub Issue
         if: failure()
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
-          echo "🔑 Authenticating gh CLI..."
-          echo "$GITHUB_TOKEN" | gh auth login --with-token
-          gh auth status
-
           echo "🔍 Checking for existing Test Failure Notifications issue..."
-          issue_number=$(gh issue list \
-            --search "Test Failure Notifications in:title" \
-            --json number --jq '.[0].number' || echo "")
+
+          issue_number=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$REPO/issues?state=open" | \
+            jq '.[] | select(.title=="Test Failure Notifications") | .number' | head -n 1)
 
           if [ -z "$issue_number" ]; then
             echo "⚠️ No existing issue found, creating a new one..."
-            issue_url=$(gh issue create \
-              --title "Test Failure Notifications" \
-              --body "This issue will be used to track all test failures across runs.")
-            echo "Issue created: $issue_url"
-            issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
+            response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+              -d '{"title":"Test Failure Notifications","body":"This issue will be used to track all test failures across runs."}' \
+              "https://api.github.com/repos/$REPO/issues")
+            issue_number=$(echo $response | jq '.number')
+            echo "✅ Created new issue #$issue_number"
           else
             echo "✅ Found existing issue: #$issue_number"
           fi
 
           echo "💬 Adding comment to issue #$issue_number..."
-          gh issue comment $issue_number \
-            --body "❌ Unit Test failed in workflow run #${{ github.run_number }}  
+          curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            -d "{\"body\":\"❌ Unit Test failed in workflow run #${{ github.run_number }}  
             **Commit:** ${{ github.sha }}  
-            **Logs:** [View run logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            **Logs:** [View run logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}" \
+            "https://api.github.com/repos/$REPO/issues/$issue_number/comments"
+
 
             
 
