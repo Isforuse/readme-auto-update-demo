@@ -205,27 +205,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # 檢查是否已經有專門的 Issue
+          echo "🔍 Checking for existing Test Failure Notifications issue..."
           issue_number=$(gh issue list \
             --search "Test Failure Notifications in:title" \
-            --json number --jq '.[0].number')
+            --json number --jq '.[0].number' || echo "")
 
           if [ -z "$issue_number" ]; then
             echo "⚠️ No existing issue found, creating a new one..."
             issue_url=$(gh issue create \
               --title "Test Failure Notifications" \
               --body "This issue will be used to track all test failures.")
+            echo "Issue created: $issue_url"
             issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
+          else
+            echo "✅ Found existing issue: #$issue_number"
           fi
 
-          # 在 Issue 裡留言測試失敗的通知
+          echo "💬 Adding comment to issue #$issue_number..."
           gh issue comment $issue_number \
             --body "❌ Unit Test failed in workflow run #${{ github.run_number }}  
             Commit: ${{ github.sha }}  
             Logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-
-
+            
 
   # === 3️⃣ Integration Test Job ===
   test-integration:
