@@ -2,9 +2,9 @@
   "name": "demo-project",
   "version": "1.0.0",
   "description": "Demo project for CI/CD Assignment with Jest and coverage",
-  "main": "index.js",
+  "main": "test.js",
   "scripts": {
-    "test": "jest --coverage --coverageReporters=json-summary"
+    "test": "jest --coverage"
   },
   "devDependencies": {
     "jest": "^29.7.0"
@@ -17,6 +17,6 @@
       "!**/coverage/**"
     ],
     "coverageDirectory": "coverage",
-    "coverageReporters": ["json", "text", "lcov", "json-summary"]
+    "coverageReporters": ["json", "text", "lcov"]
   }
 }
