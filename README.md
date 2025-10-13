@@ -9,7 +9,8 @@
 <!--END_SECTION:badges-->
 
 ## Test Coverage
-[![Coverage](https://codecov.io/gh/lsforuse/readme-auto-update-demo/branch/main/graph/badge.svg?token=e1306445-9524-406e-8f25-0dfcef6b8b72)](https://codecov.io/gh/lsforuse/readme-auto-update-demo/branch/main/graph/badge.svg?token=e1306445-9524-406e-8f25-0dfcef6b8b72&t=123)
+![Coverage](https://codecov.io/gh/lsforuse/readme-auto-update-demo/branch/main/graph/badge.svg?token=e1306445-9524-406e-8f25-0dfcef6b8b72)
+
 
 
 
