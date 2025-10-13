@@ -8,8 +8,9 @@
 ![validate-readme](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/validate-readme.yml/badge.svg)
 <!--END_SECTION:badges-->
 
-# Demo Project
-[![codecov](https://codecov.io/gh/<你的帳號>/<repo名>/branch/main/graph/badge.svg?token=XXXX)](https://codecov.io/gh/<Isforuse>/<readme-auto-update-demo>)
+## Test Coverage
+![Coverage](https://codecov.io/gh/<Isforuse>/<readme-auto-update-demo>/branch/main/graph/badge.svg?token=<e1306445-9524-406e-8f25-0dfcef6b8b72>)
+
 
 
 ## Recent Activity
