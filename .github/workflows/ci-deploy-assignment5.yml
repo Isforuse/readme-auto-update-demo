@@ -311,6 +311,14 @@ jobs:
             echo "❌ Staging release failed" && exit 1
           fi
 
+      - name: Create issue on failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create --title ":x: Staging Deployment Failed" \
+            --body "Staging deployment failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
+            
       - name: Export job status
         if: always()
         run: |
@@ -354,6 +362,14 @@ jobs:
           else
             echo "❌ Production release failed" && exit 1
           fi
+
+      - name: Create issue on failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create --title ":x: Production Deployment Failed" \
+            --body "Production deployment failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
 
       - name: Export job status
         if: always()
