@@ -11,9 +11,9 @@
 ## CI/CD Status
 
 - Build Status: ![Build](https://img.shields.io/github/actions/workflow/status/Isforuse/REPO/ci-deploy-assignment5.yml?branch=main&label=Build&job=build)
-- Test Status: ![Test](https://img.shields.io/github/actions/workflow/status/USERNAME/REPO/assignment5.yml?branch=main&label=Test&job=test-unit)
-- Staging Release: ![Staging](https://img.shields.io/github/actions/workflow/status/USERNAME/REPO/assignment5.yml?branch=main&label=Staging&job=deploy-staging)
-- Production Release: ![Production](https://img.shields.io/github/actions/workflow/status/USERNAME/REPO/assignment5.yml?branch=main&label=Production&job=deploy-production)
+- Test Status: ![Test](https://img.shields.io/github/actions/workflow/status/Isforuse/REPO/ci-deploy-assignment5.yml?branch=main&label=Test&job=test-unit)
+- Staging Release: ![Staging](https://img.shields.io/github/actions/workflow/statusIsforuse/REPO/ci-deploy-assignment5.yml?branch=main&label=Staging&job=deploy-staging)
+- Production Release: ![Production](https://img.shields.io/github/actions/workflow/status/Isforuse/REPO/ci-deploy-assignment5.yml?branch=main&label=Production&job=deploy-production)
 
 
 
