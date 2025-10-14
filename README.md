@@ -26,7 +26,7 @@
 
 ## Recent Activity
 <!--START_SECTION:activity-->
-1. ❗ Opened issue [#19](https://github.com/Isforuse/readme-auto-update-demo/issues/19) in [Isforuse/readme-auto-update-demo](https://github.com/Isforuse/readme-auto-update-demo)
+1. 🔒 Closed issue [#23](https://github.com/Isforuse/readme-auto-update-demo/issues/23) in [Isforuse/readme-auto-update-demo](https://github.com/Isforuse/readme-auto-update-demo)
 <!--END_SECTION:activity-->
 
 ## Recent Commits
