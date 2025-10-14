@@ -31,11 +31,11 @@
 
 ## Recent Commits
 <!--START_SECTION:commits-->
+- chore: update README with commits & PRs (4a0043d)
 - Update sum.js (fae91f5)
 - Update sum.js (7fe109d)
 - Update ci-deploy-assignment5.yml (87abdee)
 - Update ci-deploy-assignment5.yml (fd44fe2)
-- chore: update README with commits & PRs (2ded864)
 <!--END_SECTION:commits-->
 
 ## Recent PRs
