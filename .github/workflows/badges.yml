@@ -1,0 +1,46 @@
+name: Generate Status Badges
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  badges:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Generate badges list
+        run: |
+          OWNER=${{ github.repository_owner }}
+          REPO=$(basename $GITHUB_REPOSITORY)
+
+          echo "<!--START_SECTION:badges-->" > badges.txt
+          for wf in .github/workflows/*.yml; do
+            file=$(basename $wf)
+            name=$(basename $wf .yml)
+            echo "![${name}](https://github.com/${OWNER}/${REPO}/actions/workflows/${file}/badge.svg)" >> badges.txt
+          done
+          echo "<!--END_SECTION:badges-->" >> badges.txt
+
+      - name: Replace badges section in README
+        run: |
+          START="<!--START_SECTION:badges-->"
+          END="<!--END_SECTION:badges-->"
+          CONTENT=$(cat badges.txt)
+
+          # 若 README 沒有區塊則自動新增
+          if ! grep -q "$START" README.md; then
+            echo -e "\n$START\n$END" >> README.md
+          fi
+
+          # 用 perl 精準替換（不再重複）
+          perl -0777 -pe "s|$START[\\s\\S]*?$END|$CONTENT|g" README.md > tmp && mv tmp README.md
+
+      - name: Commit updated README
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update badges in README"
