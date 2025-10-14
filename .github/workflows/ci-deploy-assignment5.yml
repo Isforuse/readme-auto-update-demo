@@ -203,31 +203,48 @@ jobs:
           name: badge-test
           path: badges/test.json
           
-      # === 📝 Notify test results in GitHub Issue ===
+      # === 📝 Notify Test Results in GitHub Issue (single issue with comments) ===
       - name: Notify test results in GitHub Issue
-        if: always()   # ✅ 不管成功或失敗都會執行
+        if: always()   # ✅ 不管成功或失敗都執行
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
-          echo "🔍 Sending test result notification..."
+          echo "🔍 Checking for existing 'Test Notifications' issue..."
 
-          # 設定訊息文字
-          if [ "${{ job.status }}" == "success" ]; then
-            status="✅ Unit Tests passed"
-            color="green"
+          # 找是否已有固定的 "Test Notifications" issue
+          issue_number=$(gh issue list \
+            --repo "$REPO" \
+            --state open \
+            --search "Test Notifications in:title" \
+            --json number --jq '.[0].number' || echo "")
+
+          if [ -z "$issue_number" ]; then
+            echo "⚠️ No existing issue found, creating one..."
+            issue_url=$(gh issue create \
+              --repo "$REPO" \
+              --title "Test Notifications" \
+              --body "This issue is used to track all Unit Test results (success & failure).")
+            issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
+            echo "✅ Created new issue #$issue_number"
           else
-            status="❌ Unit Tests failed"
-            color="red"
+            echo "✅ Found existing issue: #$issue_number"
           fi
 
-          # 建立或更新 Issue（每次都新開一個）
-          gh issue create \
-            --title "$status in Run #${{ github.run_number }}" \
-            --body "$status in workflow run #${{ github.run_number }}.  
+          # 判斷狀態
+          if [ "${{ job.status }}" == "success" ]; then
+            status="✅ Unit Tests passed"
+          else
+            status="❌ Unit Tests failed"
+          fi
+
+          # 新增留言
+          gh issue comment $issue_number \
+            --repo "$REPO" \
+            --body "$status in workflow run #${{ github.run_number }}  
             **Commit:** ${{ github.sha }}  
             **Logs:** [View run logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-
 
 
   # === 3️⃣ Integration Test Job ===
