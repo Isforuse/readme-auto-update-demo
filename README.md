@@ -31,11 +31,11 @@
 
 ## Recent Commits
 <!--START_SECTION:commits-->
+- chore: update README with commits & PRs (ebc5878)
 - chore: update README with commits & PRs (d85914f)
 - chore: update README with commits & PRs (22417ce)
 - chore: update README with commits & PRs (ef969e6)
 - chore: update README with commits & PRs (77516e5)
-- chore: update README with commits & PRs (0168094)
 <!--END_SECTION:commits-->
 
 ## Recent PRs
