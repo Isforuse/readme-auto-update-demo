@@ -19,7 +19,7 @@ jobs:
       - name: Generate recent activity
         uses: Readme-Workflows/recent-activity@main
         with:
-          GH_USERNAME: your-github-username          # ← 換成你的 GitHub 帳號
+          GH_USERNAME: Isforuse        # ← 換成你的 GitHub 帳號
           CONFIG_FILE: ".github/recent-activity.config.yml"
         env:
           # 二選一，只要設定其中一個即可：
