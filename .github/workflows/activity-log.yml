@@ -4,26 +4,33 @@ on:
   schedule:
     - cron: "0 */6 * * *"   # 每 6 小時跑一次
   workflow_dispatch:         # 允許手動觸發
+  
+permissions:
+  contents: write
 
 jobs:
-  update:
+  update-activity:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write        # 允許修改/提交 README
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Generate recent activity
-        uses: Readme-Workflows/recent-activity@main
+      - uses: actions/checkout@v4
+      - name: Run Update GitHub Activity
+        uses: ./
         with:
-          GH_USERNAME: Isforuse        # ← 換成你的 GitHub 帳號
-          CONFIG_FILE: ".github/recent-activity.config.yml"
-        env:
-          # 二選一，只要設定其中一個即可：
-          # 1) 若你已照作業建立 PAT 並存為 TOKEN（可含私庫活動）
+          GITHUB_USERNAME: "Isforuse"
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
-          # 2) 如果不想用自建 PAT，就改用 GitHub 內建 token（只抓公開活動）：
-          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_LIMIT: 10
+          OUTPUT_STYLE: MARKDOWN
+          IGNORE_EVENTS: "[]"
+          HIDE_DETAILS_ON_PRIVATE_REPOS: false
+          README_PATH: README.md
+          COMMIT_MESSAGE: "📝 chore: Update README.md with latest activity"
+          EVENT_EMOJI_MAP: |
+            PushEvent: "🚀"
+            CreateEvent: "✨"
+            DeleteEvent: "🔥"
+            IssuesEvent: |
+              opened: "🆕"
+              closed: "✅"
+            PullRequestEvent: |
+              opened: "🔀"
+          DRY_RUN: false
