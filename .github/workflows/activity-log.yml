@@ -2,26 +2,19 @@ name: Update Activity Log
 
 on:
   schedule:
-    - cron: '0 */6 * * *'  # 每6小時自動執行一次
-  workflow_dispatch:        # 可手動觸發
+    - cron: '0 */6 * * *'  # 每6小時自動執行
+  workflow_dispatch:        # 可手動執行
 
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Generate activity log
-        uses: readme-workflows/recent-activity@v2.5.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN}}
-          MAX_LINES: 10  # 顯示最近10項活動
-
-      - name: Commit changes
-        run: |
-          git config --local user.name "github-actions"
-          git config --local user.email "github-actions@github.com"
-          git add README.md
-          git commit -m "Update activity log" || echo "No changes to commit"
-          git push
+      - name: Update README with recent GitHub activity
+        uses: JamesIves/github-activity-readme@v0.4.1
+        with:
+          COMMIT_MSG: "Update activity log"
+          GH_TOKEN: ${{ secrets.REPO_TOKEN }}
+          MAX_LINES: 10
