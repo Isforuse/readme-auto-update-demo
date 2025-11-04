@@ -2,21 +2,27 @@ name: Update Activity Log
 
 on:
   schedule:
-    - cron: "0 */6 * * *"  # 每6小時自動執行
-  workflow_dispatch:       # 允許手動執行
-  push:
-    branches: [main]
+    - cron: "0 */6 * * *"  # 每6小時
+  workflow_dispatch:
 
 jobs:
-  build:
+  update:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Generate activity log
+      - name: Generate recent activity
         uses: Readme-Workflows/recent-activity@main
         with:
-          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
-          COMMIT_MSG: "chore: update activity log"
+          GH_USERNAME: Isforuse
+          CONFIG_FILE: ".github/recent-activity.config.yml"
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "chore: update activity log" || echo "No changes to commit"
+          git push
