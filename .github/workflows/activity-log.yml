@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Generate GitHub activity
-        uses: Readme-Workflows/recent-activity@master
+        uses: Readme-Workflows/recent-activity@2.329.0
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}  # ← TOKEN 是你在 Secrets 設定的名稱，若你取不同名要改這裡
           MAX_LINES: 10                       # ← 顯示幾筆活動紀錄，可自由改成 5、15 等
