@@ -1,0 +1,66 @@
+name: README Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate README markers
+        run: |
+          if ! grep -q "<!--START_SECTION:activity-->" README.md || ! grep -q "<!--END_SECTION:activity-->" README.md; then
+            echo "❌ README.md missing required activity markers."
+            exit 1
+          else
+            echo "✅ README markers OK."
+          fi
+
+  preview:
+    if: github.event_name == 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate preview README
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.REPO_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const start = '<!--START_SECTION:activity-->';
+            const end = '<!--END_SECTION:activity-->';
+            const readme = fs.readFileSync('README.md','utf8');
+            const { data: events } = await github.request(
+              'GET /repos/{owner}/{repo}/events',
+              { owner: context.repo.owner, repo: context.repo.repo, per_page: 5 }
+            );
+            const lines = events.map(e => `- ${e.type} by @${e.actor.login} on ${e.created_at.slice(0,10)}`).join('\n');
+            const preview = readme.replace(new RegExp(`${start}[\\s\\S]*?${end}`,'m'), `${start}\n${lines}\n${end}`);
+            fs.writeFileSync('preview-README.md', preview);
+      - uses: actions/upload-artifact@v4
+        with:
+          name: preview-readme
+          path: preview-README.md
+
+  update:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update README
+        uses: jamesgeorge007/github-activity-readme@v0.4.1
+        with:
+          COMMIT_MSG: "chore: update README with recent activity"
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
