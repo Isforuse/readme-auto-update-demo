@@ -15,7 +15,7 @@ jobs:
       - name: Generate activity log
         uses: Readme-Workflows/recent-activity@v2
         env:
-          GITHUB_TOKEN: ${{ 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 }}
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN}}
           MAX_LINES: 10  # 顯示最近10項活動
 
       - name: Commit changes
