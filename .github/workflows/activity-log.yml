@@ -2,35 +2,32 @@ name: Update Activity Log
 
 on:
   schedule:
-    - cron: "0 */6 * * *"   # 每 6 小時跑一次
-  workflow_dispatch:         # 允許手動觸發
-  
-permissions:
-  contents: write
+    - cron: "0 */6 * * *"    # 每 6 小時自動跑
+  workflow_dispatch:          # 可手動觸發
 
 jobs:
   update-activity:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write         # 允許推送 README 更新
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Run Update GitHub Activity
-        uses: ./
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate GitHub Activity
+        uses: Readme-Workflows/recent-activity@v2.7.1   # ✅ 使用穩定版，不再用 ./
         with:
-          GITHUB_USERNAME: "Isforuse"
-          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
-          EVENT_LIMIT: 10
-          OUTPUT_STYLE: MARKDOWN
-          IGNORE_EVENTS: "[]"
-          HIDE_DETAILS_ON_PRIVATE_REPOS: false
-          README_PATH: README.md
-          COMMIT_MESSAGE: "📝 chore: Update README.md with latest activity"
-          EVENT_EMOJI_MAP: |
-            PushEvent: "🚀"
-            CreateEvent: "✨"
-            DeleteEvent: "🔥"
-            IssuesEvent: |
-              opened: "🆕"
-              closed: "✅"
-            PullRequestEvent: |
-              opened: "🔀"
-          DRY_RUN: false
+          GH_USERNAME: "Isforuse"                       # 你的 GitHub 帳號
+          CONFIG_FILE: ".github/recent-activity.config.yml" # 設定檔
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}            # ✅ 改用 classic PAT（名稱 TOKEN）
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "📝 chore: Update README.md with latest activity" || echo "No changes"
+          git push
