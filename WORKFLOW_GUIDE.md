@@ -10,7 +10,7 @@ runs scheduled maintenance jobs, performs validations, and deploys static conten
 
 本專案展示了一個使用 GitHub Actions 建構的 **多工作流程自動化架構**，  
 能自動更新 README 中的活動紀錄、每日排程清理、進行驗證檢查，  
-並自動發布網站至 GitHub Pages。
+並發布網站至 GitHub Pages。
 
 ---
 
