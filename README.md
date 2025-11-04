@@ -1,5 +1,6 @@
 # readme-auto-update-demo
 <!--START_SECTION:badges-->
+![activity-log](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/activity-log.yml/badge.svg)
 ![badges](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/badges.yml/badge.svg)
 ![ci-deploy-assignment5](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/ci-deploy-assignment5.yml/badge.svg)
 ![ci-deploy](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/ci-deploy.yml/badge.svg)
