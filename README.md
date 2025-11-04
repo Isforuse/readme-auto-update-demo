@@ -5,6 +5,7 @@
 ![ci-deploy-assignment5](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/ci-deploy-assignment5.yml/badge.svg)
 ![ci-deploy](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/ci-deploy.yml/badge.svg)
 ![daily-build](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/daily-build.yml/badge.svg)
+![lint-check](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/lint-check.yml/badge.svg)
 ![preview-readme](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/preview-readme.yml/badge.svg)
 ![update-readme](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/update-readme.yml/badge.svg)
 ![validate-readme](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/validate-readme.yml/badge.svg)
