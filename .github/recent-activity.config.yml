@@ -8,10 +8,15 @@ max_lines: 10
 start: "<!--RECENT_ACTIVITY:start-->"
 end: "<!--RECENT_ACTIVITY:end-->"
 
-# 要抓取的事件種類
-events:
+event_type:
   - PushEvent
-  - IssuesEvent
   - PullRequestEvent
-  - ReleaseEvent
-  - ForkEvent
+  - IssuesEvent
+  - IssueCommentEvent
+  - CreateEvent
+  - DeleteEvent
+
+limit: 10
+repo:
+  - Isforuse/readme-auto-update-demo
+show_private: false
