@@ -16,7 +16,7 @@ jobs:
       - name: Generate preview README (with real events)
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ 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 }}
           script: |
             const fs = require('fs');
             const start = '<!--START_SECTION:activity-->';
