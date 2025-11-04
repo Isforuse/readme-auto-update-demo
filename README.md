@@ -55,6 +55,10 @@ _Last updated automatically via GitHub Actions._
 ## Recent PRs
 <!--START_SECTION:prs-->
 - PR #18: Test readme auto test (by @Isforuse)
+
+- ---
+📘 For details of all workflows, see [WORKFLOW_GUIDE.md](./WORKFLOW_GUIDE.md)
+
 - PR #16: Test status badges (by @Isforuse)
 - PR #15: Test status badges (by @Isforuse)
 <!--END_SECTION:prs-->
