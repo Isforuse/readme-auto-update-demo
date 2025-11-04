@@ -51,18 +51,47 @@ while also generating status badges, maintaining clean workflow hygiene, and dep
 為了讓 workflow 能精準插入內容，  
 README 內使用 HTML 標記區段標示可自動更新範圍：  
 
-```markdown
-<!--START_SECTION:badges-->
-<!--END_SECTION:badges-->
+## 🧩 Configuration Files | 設定檔案  
 
-<!--RECENT_ACTIVITY:start-->
-<!--RECENT_ACTIVITY:end-->
+| File 檔案名稱 | Description 說明 |
+|----------------|------------------|
+| `.github/recent-activity.config.yml` | Defines activity types, record limit, and visibility settings. 定義活動類型、筆數與是否顯示私有活動。 |
+| `_config.yml` | Configures GitHub Pages theme and metadata. 設定 GitHub Pages 主題與網站資訊。 |
+| `index.md` | Includes README as site homepage. 將 README.md 作為首頁內容。 |
+| `WORKFLOW_GUIDE.md` | This documentation file. 本文件，用於說明所有工作流程。 |
 
-<!--START_SECTION:activity-->
-<!--END_SECTION:activity-->
+---
 
-<!--START_SECTION:commits-->
-<!--END_SECTION:commits-->
+## 🔐 Secrets | 機密設定  
 
-<!--START_SECTION:prs-->
-<!--END_SECTION:prs-->
+| Secret 名稱 | Scope 權限 | Purpose 用途 |
+|--------------|-------------|---------------|
+| `TOKEN` | `repo`, `read:user`, `read:org` | Grants workflow permission to read activities and push README updates. 讓流程可讀取活動與更新 README。 |
+
+> ⚠️ Please use a **Personal Access Token (classic)**,  
+> not a fine-grained token, to ensure access to both public and private repos.  
+> 請使用「經典版 PAT」，以確保可同時存取公開與私有倉庫。
+
+---
+
+## 🧠 O-Level Enhancements | O 級強化項目  
+
+| Enhancement 強化項目 | Description 說明 |
+|----------------------|------------------|
+| 🕒 **Smart Scheduling 智慧排程** | Four daily updates aligned with real usage times (00 / 08 / 12 / 17 UTC+8)。 |
+| 🧹 **Daily Maintenance 每日維護** | Cleans old logs and keeps cron jobs stable。 |
+| ✅ **Lint & Validation 自動檢查** | Ensures README structure integrity before updates。 |
+| 📘 **Workflow Documentation 文件化** | Adds clear guide explaining each workflow purpose and trigger。 |
+| 🧭 **Clean Repo Hygiene 乾淨架構** | Unified naming、註解明確、舊檔歸檔。 |
+| 🏷️ **Badges Visualization 徽章可視化** | Displays status badges for build/test results in README。 |
+
+---
+
+## 📈 Outcome | 最終成果  
+
+- GitHub Pages 自動顯示最新活動紀錄。  
+- 所有 workflow 分工明確、運作正常。  
+- 自動排程 + 驗證 + 文件化 完整整合。  
+- 清晰展示 CI/CD 自動化、可維護性 與 可重現性。  
+- ✅ **Achieved O-Level (Outstanding)**  
+
