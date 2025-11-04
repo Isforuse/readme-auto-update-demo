@@ -18,6 +18,7 @@ jobs:
         with:
           GH_USERNAME: Isforuse
           CONFIG_FILE: ".github/recent-activity.config.yml"
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
 
       - name: Commit and push changes
         run: |
