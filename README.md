@@ -26,7 +26,7 @@ _Last updated automatically via GitHub Actions._
 1. ⬆️ Pushed undefined commit(s) to [Isforuse/readme-auto-update-demo](https://github.com/Isforuse/readme-auto-update-demo)<br>
 2. ⬆️ Pushed undefined commit(s) to [Isforuse/readme-auto-update-demo](https://github.com/Isforuse/readme-auto-update-demo)<br>
 3. ⬆️ Pushed undefined commit(s) to [Isforuse/readme-auto-update-demo](https://github.com/Isforuse/readme-auto-update-demo)<br>
-4. ⬆️ Pushed undefined commit(s) to [Isforuse/readme-auto-update-demo](https://github.com/Isforuse/readme-auto-update-demo)<br>
+4. ❌ Closed PR [#17](undefined) in [Isforuse/readme-auto-update-demo](https://github.com/Isforuse/readme-auto-update-demo)<br>
 5. ⬆️ Pushed undefined commit(s) to [Isforuse/readme-auto-update-demo](https://github.com/Isforuse/readme-auto-update-demo)<br>
 <!--RECENT_ACTIVITY:end-->
 
