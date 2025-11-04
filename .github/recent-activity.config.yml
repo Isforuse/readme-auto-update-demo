@@ -1,8 +1,14 @@
 # recent-activity.config.yml
-# 指定要更新的檔案與標籤區間
+# 指定要更新的檔案與標籤範圍
 readme_file: "README.md"
 commit_message: "chore: update activity log"
 max_lines: 10
+
+# 告訴 Action 要在哪個區塊更新
+start: "<!--RECENT_ACTIVITY:start-->"
+end: "<!--RECENT_ACTIVITY:end-->"
+
+# 要抓取的事件種類
 events:
   - PushEvent
   - IssuesEvent
