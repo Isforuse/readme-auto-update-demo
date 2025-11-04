@@ -1,20 +1,27 @@
-name: Update Activity Log
+name: Update Activity Log        # ← 可改可不改，這是 workflow 名稱（出現在 Actions 頁面）
 
 on:
   schedule:
-    - cron: '0 */6 * * *'  # 每6小時自動執行
-  workflow_dispatch:        # 可手動執行
+    - cron: '0 */6 * * *'        # ← 想改執行頻率可以改這裡，例如每天一次 '0 0 * * *'
+  workflow_dispatch:              # ← 保留，可讓你手動觸發
 
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Update README with recent GitHub activity
-        uses: JamesIves/github-activity-readme@v0.4.1
-        with:
-          COMMIT_MSG: "Update activity log"
-          GH_TOKEN: ${{ secrets.REPO_TOKEN }}
-          MAX_LINES: 10
+      - name: Generate GitHub activity
+        uses: Readme-Workflows/recent-activity@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}  # ← TOKEN 是你在 Secrets 設定的名稱，若你取不同名要改這裡
+          MAX_LINES: 10                       # ← 顯示幾筆活動紀錄，可自由改成 5、15 等
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.name "github-actions"    # ← commit 時的作者名稱，可改成自己的名字
+          git config --local user.email "github-actions@github.com"  # ← commit 時的作者 email
+          git add README.md
+          git commit -m "Update activity log" || echo "No changes to commit"
+          git push
