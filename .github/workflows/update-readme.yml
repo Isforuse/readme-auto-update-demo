@@ -21,7 +21,7 @@ jobs:
         with:
           COMMIT_MSG: "chore: update README with recent activity"
         env:
-          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+          GITHUB_TOKEN: ${{ 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 }}
 
       # Step 2: 抓最近 main branch 的 commits
       - name: Fetch recent commits
