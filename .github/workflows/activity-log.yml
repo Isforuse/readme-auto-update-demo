@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Generate GitHub Activity
-        uses: Readme-Workflows/recent-activity@v2.7.1   # ✅ 使用穩定版，不再用 ./
+        uses: Readme-Workflows/recent-activity@main
         with:
           GH_USERNAME: "Isforuse"                       # 你的 GitHub 帳號
           CONFIG_FILE: ".github/recent-activity.config.yml" # 設定檔
