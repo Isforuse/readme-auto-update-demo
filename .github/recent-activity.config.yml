@@ -1,0 +1,11 @@
+# recent-activity.config.yml
+# 指定要更新的檔案與標籤區間
+readme_file: "README.md"
+commit_message: "chore: update activity log"
+max_lines: 10
+events:
+  - PushEvent
+  - IssuesEvent
+  - PullRequestEvent
+  - ReleaseEvent
+  - ForkEvent
