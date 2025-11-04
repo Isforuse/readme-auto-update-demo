@@ -5,6 +5,7 @@
 ![daily-build](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/daily-build.yml/badge.svg)
 ![lint-check](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/lint-check.yml/badge.svg)
 ![preview-readme](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/preview-readme.yml/badge.svg)
+![readme-pipeline](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/readme-pipeline.yml/badge.svg)
 ![update-readme](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/update-readme.yml/badge.svg)
 ![validate-readme](https://github.com/Isforuse/readme-auto-update-demo/actions/workflows/validate-readme.yml/badge.svg)
 <!--END_SECTION:badges-->
