@@ -38,7 +38,7 @@ _Last updated automatically via GitHub Actions._
 
 ## Recent Activity
 <!--START_SECTION:activity-->
-1. 💪 Opened PR [#46](undefined) in [Isforuse/readme-auto-update-demo](https://github.com/Isforuse/readme-auto-update-demo)
+1. 💪 Opened PR [#1](undefined) in [Saisai568/Collaboration-Merge-HW](https://github.com/Saisai568/Collaboration-Merge-HW)
 <!--END_SECTION:activity-->
 
 ## Recent Commits
