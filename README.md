@@ -38,7 +38,7 @@ _Last updated automatically via GitHub Actions._
 
 ## Recent Activity
 <!--START_SECTION:activity-->
-1. 💪 Opened PR [#1](undefined) in [Saisai568/Collaboration-Merge-HW](https://github.com/Saisai568/Collaboration-Merge-HW)
+1. 💪 Opened PR [#4](undefined) in [Saisai568/Collaboration-Merge-HW](https://github.com/Saisai568/Collaboration-Merge-HW)
 <!--END_SECTION:activity-->
 
 ## Recent Commits
