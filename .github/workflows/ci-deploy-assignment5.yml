@@ -1,0 +1,417 @@
+name: CI/CD Deployment Assignment5
+
+permissions:
+  contents: write
+  issues: write
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  # === 1️⃣ Build Job (多版本 + 語意化版本號) ===
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [16, 18, 20, 22]
+    outputs:
+      VERSION: ${{ steps.semver.outputs.VERSION }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Lightweight validation
+        run: |
+          if [ -f "README.md" ]; then
+            echo "✅ README.md found"
+          else
+            echo "❌ README.md missing" && exit 1
+          fi
+
+      - name: Build project
+        run: |
+          echo "🏗️ Building project for Node.js ${{ matrix.node }}..."
+          mkdir -p dist
+          echo "dummy output for Node.js ${{ matrix.node }}" > dist/output.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact-${{ matrix.node }}
+          path: dist/
+
+      - name: Determine next semantic version
+        if: matrix.node == '22'
+        id: semver
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "")
+          last_commit=$(git log -1 --pretty=%B)
+
+          if [[ "$last_commit" == *"#major"* ]]; then
+            level="major"
+          elif [[ "$last_commit" == *"#minor"* ]]; then
+            level="minor"
+          else
+            level="patch"
+          fi
+
+          major=$(echo "$latest" | grep -oE '[0-9]+' | head -1 || echo 0)
+          minor=$(echo "$latest" | grep -oE '[0-9]+' | head -2 | tail -1 || echo 0)
+          patch=$(echo "$latest" | grep -oE '[0-9]+' | tail -1 || echo 0)
+
+          if [[ "$level" == "major" ]]; then
+            major=$((major+1)); minor=0; patch=0
+          elif [[ "$level" == "minor" ]]; then
+            minor=$((minor+1)); patch=0
+          else
+            patch=$((patch+1))
+          fi
+
+          next="v$major.$minor.$patch"
+          echo "VERSION=$next" >> $GITHUB_OUTPUT
+
+      - name: Export job status
+        if: always() && matrix.node == '22'
+        run: |
+          mkdir -p badges
+          if [ "${{ job.status }}" == "success" ]; then
+            echo '{ "schemaVersion": 1, "label": "Build", "message": "success", "color": "green" }' > badges/build.json
+          else
+            echo '{ "schemaVersion": 1, "label": "Build", "message": "failed", "color": "red" }' > badges/build.json
+          fi
+        shell: bash
+
+      - name: Upload badge JSON
+        if: always() && matrix.node == '22'
+        uses: actions/upload-artifact@v4
+        with:
+          name: badge-build
+          path: badges/build.json
+
+
+
+  # === 2️⃣ Unit Test Job ===
+  test-unit:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install --save-dev jest-junit
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact-22
+          path: ./artifact
+
+      - name: Verify build artifact
+        run: |
+          if [ -f "./artifact/output.txt" ]; then
+            echo "✅ Build artifact found"
+          else
+            echo "❌ Build artifact missing!" && exit 1
+          fi
+
+      # 🔹 Run Jest tests (JUnit + Coverage in one go)
+      - name: Run unit tests (JUnit + Coverage)
+        run: |
+          mkdir -p reports/junit
+          npx jest \
+            --coverage \
+            --coverageReporters=json-summary \
+            --coverageReporters=lcov \
+            --reporters=default \
+            --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: reports/junit
+          JEST_JUNIT_OUTPUT_NAME: junit.xml
+
+      # 🔹 Debug: List reports folder (確認是否有生成 junit.xml)
+      - name: List reports folder
+        if: always()
+        run: ls -R reports || echo "⚠️ No reports folder found"
+
+      # 🔹 Upload JUnit XML
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-report
+          path: reports/junit/junit.xml
+          if-no-files-found: warn
+
+      # 🔹 Check coverage threshold
+      - name: Check coverage threshold (80%)
+        run: |
+          coverage=$(jq '.total.lines.pct' coverage/coverage-summary.json | cut -d'.' -f1)
+          echo "📊 Coverage = ${coverage}%"
+          if [ "$coverage" -lt 80 ]; then
+            echo "❌ Coverage below threshold (80%)"
+            exit 1
+          else
+            echo "✅ Coverage OK"
+          fi
+
+      # 🔹 Upload Coverage folder
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          if-no-files-found: ignore
+
+      # 🔹 Upload Coverage to Codecov
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage/lcov.info
+          flags: unittests
+          fail_ci_if_error: true
+
+      # 🔹 Export job status badge
+      - name: Export job status
+        if: always()
+        run: |
+          mkdir -p badges
+          if [ "${{ job.status }}" == "success" ]; then
+            echo '{ "schemaVersion": 1, "label": "Test", "message": "success", "color": "green" }' > badges/test.json
+          else
+            echo '{ "schemaVersion": 1, "label": "Test", "message": "failed", "color": "red" }' > badges/test.json
+          fi
+        shell: bash
+
+      # 🔹 Upload Test Badge JSON
+      - name: Upload badge JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: badge-test
+          path: badges/test.json
+          
+      # === 📝 Notify Test Results in GitHub Issue (single issue with comments) ===
+      - name: Notify test results in GitHub Issue
+        if: always()   # ✅ 不管成功或失敗都執行
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "🔍 Checking for existing 'Test Notifications' issue..."
+
+          # 找是否已有固定的 "Test Notifications" issue
+          issue_number=$(gh issue list \
+            --repo "$REPO" \
+            --state open \
+            --search "Test Notifications in:title" \
+            --json number --jq '.[0].number' || echo "")
+
+          if [ -z "$issue_number" ]; then
+            echo "⚠️ No existing issue found, creating one..."
+            issue_url=$(gh issue create \
+              --repo "$REPO" \
+              --title "Test Notifications" \
+              --body "This issue is used to track all Unit Test results (success & failure).")
+            issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
+            echo "✅ Created new issue #$issue_number"
+          else
+            echo "✅ Found existing issue: #$issue_number"
+          fi
+
+          # 判斷狀態
+          if [ "${{ job.status }}" == "success" ]; then
+            status="✅ Unit Tests passed"
+          else
+            status="❌ Unit Tests failed"
+          fi
+
+          # 新增留言
+          gh issue comment $issue_number \
+            --repo "$REPO" \
+            --body "$status in workflow run #${{ github.run_number }}  
+            **Commit:** ${{ github.sha }}  
+            **Logs:** [View run logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+
+
+  # === 3️⃣ Integration Test Job ===
+  test-integration:
+    runs-on: ubuntu-latest
+    needs: test-unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact-22
+          path: ./artifact
+
+      - name: Run integration tests
+        run: |
+          if grep -q "dummy output" ./artifact/output.txt; then
+            echo "✅ Integration test passed"
+          else
+            echo "❌ Integration test failed" && exit 1
+          fi
+
+      - name: Export job status
+        if: always()
+        run: |
+          mkdir -p badges
+          if [ "${{ job.status }}" == "success" ]; then
+            echo '{ "schemaVersion": 1, "label": "Integration", "message": "success", "color": "green" }' > badges/integration.json
+          else
+            echo '{ "schemaVersion": 1, "label": "Integration", "message": "failed", "color": "red" }' > badges/integration.json
+          fi
+        shell: bash
+
+      - name: Upload badge JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: badge-integration
+          path: badges/integration.json
+
+
+  # === 4️⃣ Deploy to Staging ===
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: test-integration
+    if: success() && github.ref == 'refs/heads/main'
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact-22
+          path: ./artifact
+
+      - name: Release Staging Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.build.outputs.VERSION }}
+        run: |
+          TAG="staging-${VERSION:-v0.0.${GITHUB_RUN_NUMBER}}"
+          if gh release create "$TAG" ./artifact/output.txt --notes "Staging release $TAG"; then
+            echo "✅ Staging release created"
+          else
+            echo "❌ Staging release failed" && exit 1
+          fi
+
+      - name: Create issue on failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create --title ":x: Staging Deployment Failed" \
+            --body "Staging deployment failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
+            
+      - name: Export job status
+        if: always()
+        run: |
+          mkdir -p badges
+          if [ "${{ job.status }}" == "success" ]; then
+            echo '{ "schemaVersion": 1, "label": "Staging", "message": "success", "color": "green" }' > badges/staging.json
+          else
+            echo '{ "schemaVersion": 1, "label": "Staging", "message": "failed", "color": "red" }' > badges/staging.json
+          fi
+        shell: bash
+
+      - name: Upload badge JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: badge-staging
+          path: badges/staging.json
+
+
+  # === 5️⃣ Deploy to Production ===
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: success() && github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact-22
+          path: ./artifact
+
+      - name: Release Production Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.build.outputs.VERSION }}
+        run: |
+          TAG="prod-${VERSION:-v0.0.${GITHUB_RUN_NUMBER}}"
+          if gh release create "$TAG" ./artifact/output.txt --notes "Production release $TAG"; then
+            echo "✅ Production release created"
+          else
+            echo "❌ Production release failed" && exit 1
+          fi
+
+      - name: Create issue on failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create --title ":x: Production Deployment Failed" \
+            --body "Production deployment failed in workflow run #${{ github.run_number }}. Please check logs in Actions."
+
+      - name: Export job status
+        if: always()
+        run: |
+          mkdir -p badges
+          if [ "${{ job.status }}" == "success" ]; then
+            echo '{ "schemaVersion": 1, "label": "Production", "message": "success", "color": "green" }' > badges/production.json
+          else
+            echo '{ "schemaVersion": 1, "label": "Production", "message": "failed", "color": "red" }' > badges/production.json
+          fi
+        shell: bash
+
+      - name: Upload badge JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: badge-production
+          path: badges/production.json
+
+
+  # === 6️⃣ Publish Badges to gh-pages ===
+  publish-badges:
+    runs-on: ubuntu-latest
+    needs: [build, test-unit, test-integration, deploy-staging, deploy-production]
+    if: always()
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download badge artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: badges
+
+      - name: Publish to gh-pages branch
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          mkdir -p public
+          cp badges/*/*.json public/ || true
+          git checkout --orphan gh-pages
+          git reset
+          cp -r public/* .
+          git add .
+          git commit -m "Update badges [skip ci]" || true
+          git push -f origin gh-pages
