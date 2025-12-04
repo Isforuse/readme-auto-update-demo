@@ -1,0 +1,30 @@
+name: Daily Build & Cleanup
+
+on:
+  schedule:
+    # 每天凌晨 1 點自動執行
+    - cron: "0 17 * * *"   # UTC+0 = 台灣時間 01:00
+  workflow_dispatch:
+
+jobs:
+  daily-task:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Clean old logs
+        run: |
+          mkdir -p logs
+          echo "[$(date '+%Y-%m-%d %H:%M:%S')] Running daily cleanup..." >> logs/cleanup.log
+          # 可擴充：刪除七天前的暫存檔
+          find logs -type f -mtime +7 -delete
+          echo "Cleanup complete." >> logs/cleanup.log
+
+      - name: Commit daily log
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add logs/
+          git commit -m "🧹 Daily cleanup log [skip ci]" || echo "No changes"
+          git push

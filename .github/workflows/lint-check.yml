@@ -1,0 +1,30 @@
+name: Lint Check for README
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  lint-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Verify activity placeholders
+        run: |
+          if ! grep -q "<!--RECENT_ACTIVITY:start-->" README.md; then
+            echo "❌ Missing <!--RECENT_ACTIVITY:start--> in README.md"
+            exit 1
+          fi
+          if ! grep -q "<!--RECENT_ACTIVITY:end-->" README.md; then
+            echo "❌ Missing <!--RECENT_ACTIVITY:end--> in README.md"
+            exit 1
+          fi
+          echo "✅ README placeholders are valid."
+
+      - name: Lint complete
+        run: echo "README.md check passed ✅"

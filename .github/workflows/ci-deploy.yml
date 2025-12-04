@@ -1,0 +1,236 @@
+name: CI/CD Deployment Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  # === 1️⃣ Build Job (含多版本測試與語意化版本遞增) ===
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [16, 18, 20, 22]  # ✅ 測試多版本 Node.js
+    outputs:
+      VERSION: ${{ steps.semver.outputs.VERSION }}
+
+    steps:
+      # 📦 檢出原始碼
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 🔧 安裝 Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # 🧪 Step 1. 輕量自動化測試
+      - name: Run automated tests (lightweight)
+        run: |
+          echo "🧪 Running lightweight validation tests on Node.js ${{ matrix.node }}..."
+          
+          # 檢查 README.md 是否存在
+          if [ -f "README.md" ]; then
+            echo "✅ README.md found."
+          else
+            echo "❌ README.md missing!" && exit 1
+          fi
+
+          # 檢查 GitHub Action 定義檔是否存在
+          if [ -f "action.yml" ]; then
+            echo "✅ action.yml found."
+          else
+            echo "⚠️ action.yml not found (skipping Action validation)."
+          fi
+
+          echo "✅ Basic validation passed on Node.js ${{ matrix.node }}."
+
+      # 🧾 Step 2. 測試結果顯示於 Summary
+      - name: Show summary result
+        if: success()
+        run: |
+          echo "### ✅ Automated Tests Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- Node.js version: ${{ matrix.node }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Validation successful." >> $GITHUB_STEP_SUMMARY
+
+      # 🏗️ Step 3. 建置專案
+      - name: Build project
+        run: |
+          echo "🏗️ Building project for Node.js ${{ matrix.node }}..."
+          zip -r build.zip .
+
+      # 📦 Step 4. 上傳建置產物（依版本命名）
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact-${{ matrix.node }}
+          path: build.zip
+
+      # 🔢 Step 5. 語意化版本號自動遞增（只在 Node 22 執行）
+      - name: Determine next semantic version
+        if: matrix.node == '22'
+        id: semver
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Checking latest release tag..."
+          latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "")
+          echo "Latest tag found: $latest"
+
+          # 取得最後一次 commit 訊息
+          last_commit=$(git log -1 --pretty=%B)
+          echo "🧾 Last commit message: $last_commit"
+
+          # 判定版本升級類型
+          if [[ "$last_commit" == *"#major"* ]]; then
+            level="major"
+          elif [[ "$last_commit" == *"#minor"* ]]; then
+            level="minor"
+          else
+            level="patch"
+          fi
+          echo "📈 Detected bump level: $level"
+
+          # 解析舊版本號
+          major=$(echo "$latest" | grep -oE '[0-9]+' | head -1 || echo 0)
+          minor=$(echo "$latest" | grep -oE '[0-9]+' | head -2 | tail -1 || echo 0)
+          patch=$(echo "$latest" | grep -oE '[0-9]+' | tail -1 || echo 0)
+
+          # 計算新版本
+          if [[ "$level" == "major" ]]; then
+            major=$((major + 1)); minor=0; patch=0
+          elif [[ "$level" == "minor" ]]; then
+            minor=$((minor + 1)); patch=0
+          else
+            patch=$((patch + 1))
+          fi
+
+          next="v$major.$minor.$patch"
+          echo "✅ Next version number: $next"
+          echo "VERSION=$next" >> $GITHUB_OUTPUT
+
+
+  # === 2️⃣ Deploy to Dev ===
+  deploy-dev:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: dev
+    outputs:
+      VERSION: ${{ needs.build.outputs.VERSION }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show environment secrets
+        run: |
+          echo "🔧 Environment: Development"
+          echo "API_KEY=[secure]"
+          echo "DEPLOY_TARGET=[secure]"
+
+      # ✅ 改：指定下載 Node 22 版本產物
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact-22
+
+      - name: Release Dev Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: dev-${{ needs.build.outputs.VERSION }}
+          NOTE: "Development build ${{ needs.build.outputs.VERSION }}"
+        run: |
+          echo "🚀 Deploying Dev release..."
+          gh release delete "$TAG" -y || true
+          git tag -d "$TAG" || true
+          gh release create "$TAG" build.zip --notes "$NOTE"
+
+
+  # === 3️⃣ Deploy to Staging ===
+  deploy-staging:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: staging
+    outputs:
+      VERSION: ${{ needs.deploy-dev.outputs.VERSION }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show environment secrets
+        run: |
+          echo "🔧 Environment: Staging"
+          echo "API_KEY=[secure]"
+          echo "DEPLOY_TARGET=[secure]"
+
+      # ✅ 改：指定下載 Node 22 版本產物
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact-22
+
+      - name: Release Staging Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: staging-${{ needs.deploy-dev.outputs.VERSION }}
+          NOTE: "Staging release ${{ needs.deploy-dev.outputs.VERSION }} for testing"
+        run: |
+          echo "🧪 Deploying Staging release..."
+          gh release delete "$TAG" -y || true
+          git tag -d "$TAG" || true
+          gh release create "$TAG" build.zip --notes "$NOTE"
+
+
+  # === 4️⃣ Deploy to Production ===
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ✅ 改：指定下載 Node 22 版本產物
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact-22
+
+      - name: Release Production Build
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: prod-${{ needs.deploy-staging.outputs.VERSION }}
+          NOTE: "Production release ${{ needs.deploy-staging.outputs.VERSION }}"
+        run: |
+          echo "🏁 Deploying Production release..."
+          gh release delete "$TAG" -y || true
+          git tag -d "$TAG" || true
+
+          if gh release create "$TAG" build.zip --notes "$NOTE"; then
+            echo "✅ Production release created successfully."
+          else
+            echo "❌ Release creation failed, triggering rollback..."
+            exit 1
+          fi
+
+      - name: Create or comment on GitHub Issue
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          issue_number=$(gh issue list --search "Production Deployment Notifications in:title" --json number --jq '.[0].number')
+          if [ -z "$issue_number" ]; then
+            issue_url=$(gh issue create --title "Production Deployment Notifications" --body "This issue tracks all production releases.")
+            issue_number=$(echo "$issue_url" | grep -oE '[0-9]+$')
+          fi
+          gh issue comment $issue_number --body "✅ **Production release (${TAG})** deployed successfully at $(date)! 🎉"
+
+      - name: Rollback on failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: prod-${{ needs.deploy-staging.outputs.VERSION }}
+        run: |
+          echo "⚠️ Deployment failed, cleaning up release..."
+          gh release delete "$TAG" -y || true
+          git tag -d "$TAG" || true
+          echo "🧹 Rollback executed for $TAG."
